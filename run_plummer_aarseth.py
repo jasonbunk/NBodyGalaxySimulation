@@ -7,7 +7,7 @@ from PlummerGalaxy import PlummerGalaxy
 
 # Settings:
 
-createNewInitialConditions = False
+createNewInitialConditions = True
 
 MakePositionsVideo = True
 MakeDistributionsVideo = False
@@ -20,21 +20,23 @@ if createNewInitialConditions:
 	newGalaxy = PlummerGalaxy()
 	newGalaxy.npts = 1000
 	newGalaxy.R = 1.0
+	newGalaxy.timestep = 0.1
+	newGalaxy.timemax = 2.0
 	newGalaxy.ZeroVelocities_Bool = True
 	newGalaxy.WriteInitialConditions("plummer.data")
 	
 	print("compiling Aarseth c code...")
-	os.system("./build_aarseth.sh")
+	os.system("gcc -o Aarseth/aarseth Aarseth/nbody0-lab.c -lm")
 	
 	print("Running compiled Aarseth nbody code on Plummer initial conditions file")
-	os.system("./aarseth plummer.data")
+	os.system("./Aarseth/aarseth plummer.data")
 
 
 if MakePositionsVideo or MakeDistributionsVideo:
 	#=================================================================================
 	# Plot the results using matplotlib
 	
-	fin = open("out_aarseth_pts_1000.data", "r")
+	fin = open("out_aarseth_npts_1000.data", "r")
 	npts = 1000
 	
 	

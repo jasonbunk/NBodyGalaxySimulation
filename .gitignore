@@ -9,3 +9,6 @@ aarseth
 
 #ignore data files (which will be huge)
 *.data
+
+#ignore videos
+*.avi
