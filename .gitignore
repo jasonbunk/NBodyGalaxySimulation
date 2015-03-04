@@ -1,0 +1,11 @@
+#ignore video frames generated
+frames/*.png
+
+#ignore compiled Aarseth code
+aarseth
+
+#ignore compiled Python files
+*.pyc
+
+#ignore data files (which will be huge)
+*.data
