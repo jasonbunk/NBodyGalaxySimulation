@@ -14,7 +14,8 @@ class PlummerGalaxy:
 		self.Aarseth_eta = 0.01
 		self.Aarseth_eps_sqd = 0.01
 	
-	def WriteInitialConditions(self, outfilename):
+	
+	def GenerateInitialConditions(self):
 		
 		#=================================================================================
 		# Step one: generate random radii
@@ -56,9 +57,9 @@ class PlummerGalaxy:
 		RandomThetas = np.random.uniform(0,6.28318530717958647693,self.npts) #angle around the XY plane
 		RandomPhis = np.arccos(np.random.uniform(-1,1,self.npts)) #angle from z axis
 
-		ptsx = np.multiply(radii, np.multiply(np.cos(RandomThetas), np.sin(RandomPhis)))
-		ptsy = np.multiply(radii, np.multiply(np.sin(RandomThetas), np.sin(RandomPhis)))
-		ptsz = np.multiply(radii, np.cos(RandomPhis))
+		self.ptsx = np.multiply(radii, np.multiply(np.cos(RandomThetas), np.sin(RandomPhis)))
+		self.ptsy = np.multiply(radii, np.multiply(np.sin(RandomThetas), np.sin(RandomPhis)))
+		self.ptsz = np.multiply(radii, np.cos(RandomPhis))
 
 		#=================================================================================
 		# Get cartesian velocities
@@ -76,18 +77,20 @@ class PlummerGalaxy:
 		RandomThetas = np.random.uniform(0,6.28318530717958647693,self.npts) #angle around the XY plane
 		RandomPhis = np.arccos(np.random.uniform(-1,1,self.npts)) #angle from z axis
 		
-		ptsvx = np.multiply(velsmagnitude, np.multiply(np.cos(RandomThetas), np.sin(RandomPhis)))
-		ptsvy = np.multiply(velsmagnitude, np.multiply(np.sin(RandomThetas), np.sin(RandomPhis)))
-		ptsvz = np.multiply(velsmagnitude, np.cos(RandomPhis))
+		self.ptsvx = np.multiply(velsmagnitude, np.multiply(np.cos(RandomThetas), np.sin(RandomPhis)))
+		self.ptsvy = np.multiply(velsmagnitude, np.multiply(np.sin(RandomThetas), np.sin(RandomPhis)))
+		self.ptsvz = np.multiply(velsmagnitude, np.cos(RandomPhis))
 		
 		if self.ZeroVelocities_Bool:
-			ptsvx = (ptsvx * 0.0)
-			ptsvy = (ptsvy * 0.0)
-			ptsvz = (ptsvz * 0.0)
+			self.ptsvx = (self.ptsvx * 0.0)
+			self.ptsvy = (self.ptsvy * 0.0)
+			self.ptsvz = (self.ptsvz * 0.0)
 		
 		#print("avg velocity == "+str(np.mean(velsmagnitude)))
 		#exit()
-		
+	
+	
+	def WriteToFile(self, outfilename):
 		#=================================================================================
 		# Print these initial conditions to file
 		
@@ -100,7 +103,7 @@ class PlummerGalaxy:
 		# body:
 		# mass, x, y, z, vx, vy, vz
 		for i in range(self.npts):
-			fo.write(str(massperstar)+"\t"+str(ptsx[i])+"\t"+str(ptsy[i])+"\t"+str(ptsz[i])+"\t"+str(ptsvx[i])+"\t"+str(ptsvy[i])+"\t"+str(ptsvz[i])+"\n")
+			fo.write(str(massperstar)+"\t"+str(self.ptsx[i])+"\t"+str(self.ptsy[i])+"\t"+str(self.ptsz[i])+"\t"+str(self.ptsvx[i])+"\t"+str(self.ptsvy[i])+"\t"+str(self.ptsvz[i])+"\n")
 		
 		fo.close()
 

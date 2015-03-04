@@ -23,7 +23,9 @@ if createNewInitialConditions:
 	newGalaxy.timestep = 0.1
 	newGalaxy.timemax = 2.0
 	newGalaxy.ZeroVelocities_Bool = True
-	newGalaxy.WriteInitialConditions("plummer.data")
+	
+	newGalaxy.GenerateInitialConditions()
+	newGalaxy.WriteToFile("plummer.data")
 	
 	print("compiling Aarseth c code...")
 	os.system("gcc -o Aarseth/aarseth Aarseth/nbody0-lab.c -lm")
