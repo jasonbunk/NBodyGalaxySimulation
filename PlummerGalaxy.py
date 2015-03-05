@@ -1,10 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from InitialConditions import InitialConditions
 
 
-class PlummerGalaxy:
-
+class PlummerGalaxy(InitialConditions):
+	
 	def __init__(self):
+		InitialConditions.__init__(self)
 		self.npts = 1000
 		self.R = 1.0
 		self.Mtot = 1.0 #currently, must be 1
@@ -15,7 +17,9 @@ class PlummerGalaxy:
 		self.Aarseth_eps_sqd = 0.01
 	
 	
-	def GenerateInitialConditions(self):
+	def GenerateInitialConditions(self, offset_x, offset_y, offset_z):
+		
+		self.masses = np.ones(self.npts) * (float(self.Mtot) / float(self.npts))
 		
 		#=================================================================================
 		# Step one: generate random radii
@@ -34,36 +38,36 @@ class PlummerGalaxy:
 		bigtermR24to13 = -1.0*np.power(np.absolute((-1.0*R**6)*np.power(P,2.0) - ((R**12.0)*P) + np.sqrt(np.power(P,4.0)*(R**12.0) - (2.0*(R**18))*np.power(P,3.0) + (R**24)*np.power(P,2.0))), 1.0/3.0)
 		rhat = np.divide(P, R**6.0-P) + 1.25992104989487316477*(R**6.0)*np.divide(P, np.multiply(P-R**6, bigtermR24to13)) + np.divide(bigtermR24to13, 1.25992104989487316477*(P-R**6))
 		radii = R*np.sqrt(rhat)
-	
+		
 	
 		# this was given by the paper in lecture 5
 		#radii = np.power(np.power(randnums,-2/3)-1, -1/2)
-
+		
 		#=================================================================================
 		# Plot radii to ensure we match the desired distribution
-	
+		
 		radiiForPlotting = radii.copy()
 		radiiForPlotting[radiiForPlotting > 9.9] = 9.9
-	
+		
 		truthx = np.linspace(0,10,self.npts)
 		plt.plot(truthx, 3.0*np.power(truthx,2.0)*np.power(1.0+np.power(truthx,2.0),-5.0/2.0))
 		plt.hist(radiiForPlotting, 100, normed=1, alpha=0.75, facecolor='green')
 		plt.grid(True)
 		plt.show()
-
+		
 		#=================================================================================
 		# Get cartesian 3D coordinates by placing the points onto spheres at their radii
-
+		
 		RandomThetas = np.random.uniform(0,6.28318530717958647693,self.npts) #angle around the XY plane
 		RandomPhis = np.arccos(np.random.uniform(-1,1,self.npts)) #angle from z axis
-
-		self.ptsx = np.multiply(radii, np.multiply(np.cos(RandomThetas), np.sin(RandomPhis)))
-		self.ptsy = np.multiply(radii, np.multiply(np.sin(RandomThetas), np.sin(RandomPhis)))
-		self.ptsz = np.multiply(radii, np.cos(RandomPhis))
-
+		
+		self.ptsx = np.multiply(radii, np.multiply(np.cos(RandomThetas), np.sin(RandomPhis))) + float(offset_x)
+		self.ptsy = np.multiply(radii, np.multiply(np.sin(RandomThetas), np.sin(RandomPhis))) + float(offset_y)
+		self.ptsz = np.multiply(radii, np.cos(RandomPhis)) + float(offset_z)
+		
 		#=================================================================================
 		# Get cartesian velocities
-
+		
 		RandomQs = np.random.uniform(0, 1, self.npts)
 		RandomGs = np.random.uniform(0, 0.093, self.npts)
 
@@ -91,20 +95,9 @@ class PlummerGalaxy:
 	
 	
 	def WriteToFile(self, outfilename):
-		#=================================================================================
-		# Print these initial conditions to file
 		
-		fo = open(outfilename, "w")
+		header = str(self.npts)+"  "+str(self.Aarseth_eta)+"  "+str(self.timestep)+"  "+str(self.timemax)+"  "+str(self.Aarseth_eps_sqd)+" \n"
 		
-		# header:
-		fo.write(str(self.npts)+"  "+str(self.Aarseth_eta)+"  "+str(self.timestep)+"  "+str(self.timemax)+"  "+str(self.Aarseth_eps_sqd)+" \n")
-		
-		massperstar = (float(self.Mtot) / float(self.npts))
-		# body:
-		# mass, x, y, z, vx, vy, vz
-		for i in range(self.npts):
-			fo.write(str(massperstar)+"\t"+str(self.ptsx[i])+"\t"+str(self.ptsy[i])+"\t"+str(self.ptsz[i])+"\t"+str(self.ptsvx[i])+"\t"+str(self.ptsvy[i])+"\t"+str(self.ptsvz[i])+"\n")
-		
-		fo.close()
+		self.WriteInitialConditionsToFile(outfilename, header)
 
 

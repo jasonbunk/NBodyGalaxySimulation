@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from PlummerGalaxy import PlummerGalaxy
+from InitialConditions import InitialConditions
 
 # Settings:
 
@@ -16,30 +17,37 @@ MakeDistributionsVideo = False
 #=================================================================================
 if createNewInitialConditions:
 	
-	# Generate Plummer galaxy
-	newGalaxy = PlummerGalaxy()
-	newGalaxy.npts = 1000
-	newGalaxy.R = 1.0
-	newGalaxy.timestep = 0.1
-	newGalaxy.timemax = 2.0
-	newGalaxy.ZeroVelocities_Bool = True
+	galaxy1 = PlummerGalaxy()
+	galaxy1.npts = 1000
+	galaxy1.R = 1.0
+	galaxy1.ZeroVelocities_Bool = False
+	galaxy1.GenerateInitialConditions(-1, -2.5, 0)
 	
-	newGalaxy.GenerateInitialConditions(0,0,0)
-	newGalaxy.WriteToFile("plummer.data")
+	galaxy2 =PlummerGalaxy()
+	galaxy2.npts = 1000
+	galaxy2.R = 1.0
+	galaxy2.ZeroVelocities_Bool = False
+	galaxy2.GenerateInitialConditions(1, 2.5, 0)
+	
+	bothGalaxies = InitialConditions()
+	bothGalaxies.extend(galaxy1)
+	bothGalaxies.extend(galaxy2)
+	AarsethHeader = "2000  0.05  0.15  20.0  0.10\n"
+	bothGalaxies.WriteInitialConditionsToFile("two_plummers_collision.data", AarsethHeader)
 	
 	print("compiling Aarseth c code...")
 	os.system("gcc -o Aarseth/aarseth Aarseth/nbody0-lab.c -lm")
 	
 	print("Running compiled Aarseth nbody code on Plummer initial conditions file")
-	os.system("./Aarseth/aarseth plummer.data")
+	os.system("./Aarseth/aarseth two_plummers_collision.data")
 
 
 if MakePositionsVideo or MakeDistributionsVideo:
 	#=================================================================================
 	# Plot the results using matplotlib
 	
-	fin = open("out_aarseth_npts_1000.data", "r")
-	npts = 1000
+	fin = open("out_aarseth_npts_2000.data", "r")
+	npts = 2000
 	
 	
 	ptsx = np.zeros(npts)
@@ -61,8 +69,8 @@ if MakePositionsVideo or MakeDistributionsVideo:
 				
 				ax.scatter(ptsx, ptsy, ptsz)
 				
-				ax.set_xlim(-5, 5)
-				ax.set_ylim(-5, 5)
+				ax.set_xlim(-8, 8)
+				ax.set_ylim(-8, 8)
 				ax.set_aspect(1)
 				ax.set_xlabel('x (kpc)')
 				ax.set_ylabel('y (kpc)')
