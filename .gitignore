@@ -12,3 +12,9 @@ aarseth
 
 #ignore videos
 *.avi
+
+#ignore compiled C/C++ files
+*.o
+
+#ignore compiled OpenCL nbody code
+OpenCL_N2/nbodyocl
