@@ -8,31 +8,32 @@ from InitialConditions import InitialConditions
 
 # Settings:
 
-createNewInitialConditions = True
+createNewInitialConditions = False
 
 MakePositionsVideo = True
 MakeDistributionsVideo = False
 
+UseImageMagickForFancierVideo = False
 
 #=================================================================================
 if createNewInitialConditions:
 	
 	galaxy1 = PlummerGalaxy()
-	galaxy1.npts = 1000
+	galaxy1.npts = 3000
 	galaxy1.R = 1.0
 	galaxy1.ZeroVelocities_Bool = False
-	galaxy1.GenerateInitialConditions(-1, -2.5, 0)
+	galaxy1.GenerateInitialConditions(-2.5, -2.5, 0)
 	
 	galaxy2 =PlummerGalaxy()
-	galaxy2.npts = 1000
+	galaxy2.npts = 3000
 	galaxy2.R = 1.0
 	galaxy2.ZeroVelocities_Bool = False
-	galaxy2.GenerateInitialConditions(1, 2.5, 0)
+	galaxy2.GenerateInitialConditions(2.5, 2.5, 0)
 	
 	bothGalaxies = InitialConditions()
 	bothGalaxies.extend(galaxy1)
 	bothGalaxies.extend(galaxy2)
-	AarsethHeader = "2000  0.05  0.15  20.0  0.10\n"
+	AarsethHeader = "6000  0.05  0.15  30.0  0.10\n"
 	bothGalaxies.WriteInitialConditionsToFile("two_plummers_collision.data", AarsethHeader)
 	
 	print("compiling Aarseth c code...")
@@ -46,13 +47,26 @@ if MakePositionsVideo or MakeDistributionsVideo:
 	#=================================================================================
 	# Plot the results using matplotlib
 	
-	fin = open("out_aarseth_npts_2000.data", "r")
-	npts = 2000
-	
+	fin = open("out_aarseth_npts_6000.data", "r")
+	npts = 6000
 	
 	ptsx = np.zeros(npts)
 	ptsy = np.zeros(npts)
 	ptsz = np.zeros(npts)
+	
+	if MakePositionsVideo and UseImageMagickForFancierVideo:
+		# plot axis -- we'll hide it in all future plots because we want to post-process the stars
+		fig = plt.figure()
+		ax = fig.add_subplot(1,1,1)
+		ax.set_xlim(-8, 8)
+		ax.set_ylim(-8, 8)
+		ax.set_xlabel('x (kpc)')
+		ax.set_ylabel('y (kpc)')
+		ax.set_aspect(1)
+		plt.savefig("frames/_aoutlineframe.png")
+		plt.clf()
+		plt.close()
+		os.system("convert frames/_aoutlineframe.png -negate frames/_aoutlineframe.png")
 	
 	partnum = 0
 	timestepint = 0
@@ -61,7 +75,7 @@ if MakePositionsVideo or MakeDistributionsVideo:
 		ptsx[partnum], ptsy[partnum], ptsz[partnum] = line.split()   # split line by whitespace
 	
 		#print("pt_"+str(partnum)+" == ("+str(ptsx[partnum])+", "+str(ptsy[partnum])+", "+str(ptsz[partnum])+")")
-	
+		
 		if partnum >= (npts-1):
 			if MakePositionsVideo:
 				fig = plt.figure()
@@ -72,14 +86,21 @@ if MakePositionsVideo or MakeDistributionsVideo:
 				ax.set_xlim(-8, 8)
 				ax.set_ylim(-8, 8)
 				ax.set_aspect(1)
-				ax.set_xlabel('x (kpc)')
-				ax.set_ylabel('y (kpc)')
-				ax.set_title("time: "+str(timestepint))
+				if UseImageMagickForFancierVideo:
+					ax.get_xaxis().set_visible(False)
+					ax.get_yaxis().set_visible(False)
+					ax.set_frame_on(False)
+				else:
+					ax.set_title("time: "+str(timestepint))
+					ax.set_xlabel('x (kpc)')
+					ax.set_ylabel('y (kpc)')
 				
 				fname = "frames/_tmp%03d.png"%timestepint
 				plt.savefig(fname)
 				plt.clf()
 				plt.close()
+				os.system("convert "+fname+" -negate -gaussian-blur 7x2 -contrast "+fname)
+				os.system("composite -compose plus "+fname+" frames/_aoutlineframe.png "+fname)
 			
 			elif MakeDistributionsVideo:
 				radiiForPlotting = np.sqrt(np.power(ptsx,2.0) + np.power(ptsy,2.0) + np.power(ptsz,2.0))
@@ -109,7 +130,7 @@ if MakePositionsVideo or MakeDistributionsVideo:
 	
 	print('Making movie video.avi - this make take a while')
 	os.system("ffmpeg -r 15 -f image2 -i 'frames/_tmp%03d.png' -qscale 0 'video.avi'")
-	os.system("rm frames/*.png")
+	#os.system("rm frames/*.png")
 
 
 

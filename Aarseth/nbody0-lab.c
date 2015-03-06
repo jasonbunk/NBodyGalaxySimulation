@@ -258,11 +258,11 @@ void outputData()
         totalMass += masses[i];
 
         /*
-        fprintf(outputFile, "%14.7g %14.7g %14.7g %14.7g \n", 
+        fprintf(outputFile, "%14.7g %14.7g %14.7g %14.7g\n", 
 	  masses[i], positions[i][0], positions[i][1], positions[i][2]);
         */
         
-        fprintf(outputFile, "%14.7g %14.7g %14.7g \n", 
+        fprintf(outputFile, "%14.7g %14.7g %14.7g\n", 
 	  positions[i][0], positions[i][1], positions[i][2]);
     }
 

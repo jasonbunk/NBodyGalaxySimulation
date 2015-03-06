@@ -4,16 +4,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from PlummerGalaxy import PlummerGalaxy
+from plot_or_make_video import MakeVideo
 
 # Settings:
 
 createNewInitialConditions = True
 
 MakePositionsVideo = True
-MakeDistributionsVideo = False
+MakeDistributionsVideo = True
 
-galaxyNumPts = 1000
-
+galaxyNumPts = 2048
 
 #=================================================================================
 if createNewInitialConditions:
@@ -23,17 +23,18 @@ if createNewInitialConditions:
 	newGalaxy.npts = galaxyNumPts
 	newGalaxy.R = 1.0
 	newGalaxy.timestep = 0.1
-	newGalaxy.timemax = 2.0
-	newGalaxy.ZeroVelocities_Bool = True
+	newGalaxy.timemax = 12.0
+	newGalaxy.ZeroVelocities_Bool = False
 	
 	newGalaxy.GenerateInitialConditions(0,0,0)
 	newGalaxy.WriteToFile("plummer.data")
 	
-	print("compiling Aarseth c code...")
-	os.system("gcc -o Aarseth/aarseth Aarseth/nbody0-lab.c -lm")
+	print("compiling OpenCL C++ code...")
+	os.system("./OpenCL_N2/buildFromParentFolder.sh")
 	
-	print("Running compiled Aarseth nbody code on Plummer initial conditions file")
-	os.system("./Aarseth/aarseth plummer.data")
+	print("Running compiled OpenCL C++ nbody code (on GPU) on Plummer initial conditions file")
+	os.system("./OpenCL_N2/nbodyocl gpu plummer.data OpenCL_N2/nbody_n2_kernel.cl")
+	
 
 
 if MakePositionsVideo or MakeDistributionsVideo:
@@ -41,8 +42,10 @@ if MakePositionsVideo or MakeDistributionsVideo:
 	print("beginning to make plots/video...")	
 	
 	if MakePositionsVideo:
-		MakeVideo(galaxyNumPts, "out_aarseth_npts_"+str()+".data", True)
+		MakeVideo(galaxyNumPts, "out_opencl.data", True)
 	if MakeDistributionsVideo:
-		MakeVideo(galaxyNumPts, "out_aarseth_npts_"+str()+".data", False)
+		MakeVideo(galaxyNumPts, "out_opencl.data", False)
+
+
 
 
