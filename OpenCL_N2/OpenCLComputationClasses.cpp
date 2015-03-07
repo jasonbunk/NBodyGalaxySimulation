@@ -18,6 +18,7 @@
 */
 
 #include "OpenCLComputationClasses.h"
+#include "ListOpenCLDeviceInfo.h"
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -86,6 +87,9 @@ void OpenCLContextAndDevices::Init(std::string deviceType, bool profiling /*=fal
 	} else {
 		myQueue = new cl::CommandQueue(GetContext(), GetDevices()[GetDeviceNumUsed()], 0);
 	}
+	
+	ListOpenCLDeviceInfo(); //print info
+	//exit(0);
 	
 //} catch (cl::Error error) {
 //	cout << "caught exception: " << error.what() << '(' << error.err() << ')' << endl;

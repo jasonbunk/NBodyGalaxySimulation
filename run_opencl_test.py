@@ -18,7 +18,10 @@ galaxyNumPts = 2048
 #=================================================================================
 if createNewInitialConditions:
 	
-	# Generate Plummer galaxy
+	print("compiling OpenCL C++ code...")
+	os.system("(cd OpenCL_N2 && make)")
+	
+	print("generating Plummer galaxy...")
 	newGalaxy = PlummerGalaxy()
 	newGalaxy.npts = galaxyNumPts
 	newGalaxy.R = 1.0
@@ -28,9 +31,6 @@ if createNewInitialConditions:
 	
 	newGalaxy.GenerateInitialConditions(0,0,0)
 	newGalaxy.WriteToFile("plummer.data")
-	
-	print("compiling OpenCL C++ code...")
-	os.system("./OpenCL_N2/buildFromParentFolder.sh")
 	
 	print("Running compiled OpenCL C++ nbody code (on GPU) on Plummer initial conditions file")
 	os.system("./OpenCL_N2/nbodyocl gpu plummer.data OpenCL_N2/nbody_n2_kernel.cl")

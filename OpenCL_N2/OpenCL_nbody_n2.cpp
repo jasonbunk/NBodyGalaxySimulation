@@ -181,20 +181,26 @@ int main(int argc, char* argv[])
 			
 			err = ctxtAndDevcs.GetQueue().enqueueNDRangeKernel(kernelClass.GetKernel(),//kernel
 									cl::NullRange,		   //offset
-									cl::NDRange(nparticles,1), //global
-									cl::NullRange,		   //local
+									cl::NDRange(nparticles),   //global
+									cl::NDRange(nthreads),	   //local
 									nullptr,		   //events to finish before being queued
 									&event);		   //event representing this execution instance
 			CheckCLErr(err, "enqueueNDRangeKernel()");
 			event.wait(); //wait until that processing is done
+#ifdef PROFILING
+			cl_ulong start= event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+			cl_ulong end  = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+			double time = 1.e-9 * (((double)end)-((double)start));
+			cout << "Time for kernel to execute " << time << endl;
+#endif
 			
 			kernelClass.GetKernel().setArg(2, *positionsBBBuf); //do another update: set "old" to the "intermediate-new"
 			kernelClass.GetKernel().setArg(3, *positionsAABuf); //set "new" to the "intermediate-old"
 			
 			err = ctxtAndDevcs.GetQueue().enqueueNDRangeKernel(kernelClass.GetKernel(),//kernel
 									cl::NullRange,		   //offset
-									cl::NDRange(nparticles,1), //global
-									cl::NDRange(1,1),	   //local
+									cl::NDRange(nparticles),   //global
+									cl::NDRange(nthreads),	   //local
 									nullptr,		   //events to finish before being queued
 									&event);		   //event representing this execution instance
 			CheckCLErr(err, "enqueueNDRangeKernel()");
@@ -202,7 +208,7 @@ int main(int argc, char* argv[])
 		}
 		
 		ctxtAndDevcs.GetQueue().enqueueReadBuffer(*positionsAABuf, CL_TRUE, 0, sizeOfPosArrays, &(positions_host[0]));
-		ctxtAndDevcs.GetQueue().enqueueReadBuffer(*velocitysBuf,   CL_TRUE, 0, sizeOfPosArrays, &(velocitys_host[0]));
+		//ctxtAndDevcs.GetQueue().enqueueReadBuffer(*velocitysBuf,   CL_TRUE, 0, sizeOfPosArrays, &(velocitys_host[0]));
 		
 		//save to disk
 		writeParticles(outputFile, positions_host);
