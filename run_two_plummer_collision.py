@@ -1,14 +1,21 @@
 import os
 import math
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from PlummerGalaxy import PlummerGalaxy
 from InitialConditions import InitialConditions
+import imp
+try:
+    imp.find_module('matplotlib')
+    matplotlibAvailable = True
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+except ImportError:
+    matplotlibAvailable = False
+
 
 # Settings:
 
-createNewInitialConditions = False
+createNewInitialConditions = True
 
 MakePositionsVideo = True
 MakeDistributionsVideo = False
@@ -37,13 +44,16 @@ if createNewInitialConditions:
 	bothGalaxies.WriteInitialConditionsToFile("two_plummers_collision.data", AarsethHeader)
 	
 	print("compiling Aarseth c code...")
-	os.system("gcc -o Aarseth/aarseth Aarseth/nbody0-lab.c -lm")
+	os.system("(cd Aarseth && make nbody0-lab)")
 	
 	print("Running compiled Aarseth nbody code on Plummer initial conditions file")
-	os.system("./Aarseth/aarseth two_plummers_collision.data")
+	os.system("./Aarseth/nbody0-lab two_plummers_collision.data")
 
 
-if MakePositionsVideo or MakeDistributionsVideo:
+if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
+    
+	print("beginning to make plots/video...")
+
 	#=================================================================================
 	# Plot the results using matplotlib
 	

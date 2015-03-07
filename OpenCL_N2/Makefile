@@ -10,7 +10,7 @@ CXX = clang++
 DEPS = ListOpenCLDeviceInfo.h OpenCLComputationClasses.h
 OBJS = ListOpenCLDeviceInfo.o OpenCLComputationClasses.o OpenCL_nbody_n2.o
 CXXFLAGS = -Wall -Ipath-OpenCL-include -std=c++11 -framework OpenCL
-LFLAGS = -Wall -Lpath-OpenCL-libdir -lOpenCL -framework OpenCL
+LFLAGS = -Wall -framework OpenCL
 endif
 
 %.o: %.c $(DEPS)

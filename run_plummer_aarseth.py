@@ -1,9 +1,16 @@
 import os
 import math
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from PlummerGalaxy import PlummerGalaxy
+import imp
+try:
+    imp.find_module('matplotlib')
+    matplotlibAvailable = True
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+except ImportError:
+    matplotlibAvailable = False
+
 
 # Settings:
 
@@ -30,13 +37,13 @@ if createNewInitialConditions:
 	newGalaxy.WriteToFile("plummer.data")
 	
 	print("compiling Aarseth c code...")
-	os.system("gcc -o Aarseth/aarseth Aarseth/nbody0-lab.c -lm")
-	
+	os.system("(cd Aarseth && make nbody0-lab)")
+    
 	print("Running compiled Aarseth nbody code on Plummer initial conditions file")
-	os.system("./Aarseth/aarseth plummer.data")
+	os.system("./Aarseth/nbody0-lab plummer.data")
 
 
-if MakePositionsVideo or MakeDistributionsVideo:
+if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
 	
 	print("beginning to make plots/video...")	
 	

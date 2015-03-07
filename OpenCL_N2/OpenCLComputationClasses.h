@@ -19,9 +19,7 @@
    limitations under the License.
 */
 
-
-//#define __NO_STD_VECTOR // Use std::vector instead of STL version
-#include <CL/cl.hpp>
+#include "IncludeOpenCL.h"
 #include <assert.h>
 
 void CheckCLErr(cl_int err, const char * name);

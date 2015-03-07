@@ -18,8 +18,7 @@
 */
 
 #include <utility>
-//#define __NO_STD_VECTOR // Use std::vector instead of STL version
-#include <CL/cl.hpp>
+#include "IncludeOpenCL.h"
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>

@@ -1,6 +1,6 @@
 #include "ListOpenCLDeviceInfo.h"
-#include <CL/cl.hpp>
-#include <stdio.h>                                                                                                                                              
+#include "IncludeOpenCL.h"
+#include <stdio.h>
 #include <stdlib.h>
 
 void ListOpenCLDeviceInfo()

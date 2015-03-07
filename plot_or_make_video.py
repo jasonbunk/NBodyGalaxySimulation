@@ -1,9 +1,19 @@
 import os
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+import imp
+try:
+  imp.find_module('matplotlib')
+  matplotlibAvailable = True
+  import matplotlib.pyplot as plt
+  from mpl_toolkits.mplot3d import Axes3D
+except ImportError:
+  matplotlibAvailable = False
 
 def MakeVideo(npts, datafilename, boolTrueIfPositionsVideo_FalseIfDistributionsVideo):
+	
+	if matplotlibAvailable == False:
+		print("can't make video without matplotlib")
+		return
 	
 	print("beginning to make plots/video...")	
 	#=================================================================================

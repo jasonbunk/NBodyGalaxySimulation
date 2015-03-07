@@ -1,6 +1,13 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from InitialConditions import InitialConditions
+import imp
+try:
+  imp.find_module('matplotlib')
+  matplotlibAvailable = True
+  import matplotlib.pyplot as plt
+  from mpl_toolkits.mplot3d import Axes3D
+except ImportError:
+  matplotlibAvailable = False
 
 
 class PlummerGalaxy(InitialConditions):
@@ -44,16 +51,17 @@ class PlummerGalaxy(InitialConditions):
 		#radii = np.power(np.power(randnums,-2/3)-1, -1/2)
 		
 		#=================================================================================
-		# Plot radii to ensure we match the desired distribution
-		
-		radiiForPlotting = radii.copy()
-		radiiForPlotting[radiiForPlotting > 9.9] = 9.9
-		
-		truthx = np.linspace(0,10,self.npts)
-		plt.plot(truthx, 3.0*np.power(truthx,2.0)*np.power(1.0+np.power(truthx,2.0),-5.0/2.0))
-		plt.hist(radiiForPlotting, 100, normed=1, alpha=0.75, facecolor='green')
-		plt.grid(True)
-		plt.show()
+		if matplotlibAvailable:
+			# Plot radii to ensure we match the desired distribution
+			
+			radiiForPlotting = radii.copy()
+			radiiForPlotting[radiiForPlotting > 9.9] = 9.9
+			
+			truthx = np.linspace(0,10,self.npts)
+			plt.plot(truthx, 3.0*np.power(truthx,2.0)*np.power(1.0+np.power(truthx,2.0),-5.0/2.0))
+			plt.hist(radiiForPlotting, 100, normed=1, alpha=0.75, facecolor='green')
+			plt.grid(True)
+			plt.show()
 		
 		#=================================================================================
 		# Get cartesian 3D coordinates by placing the points onto spheres at their radii

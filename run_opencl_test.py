@@ -1,10 +1,18 @@
 import os
 import math
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from PlummerGalaxy import PlummerGalaxy
 from plot_or_make_video import MakeVideo
+import imp
+try:
+  imp.find_module('matplotlib')
+  matplotlibAvailable = True
+  import matplotlib.pyplot as plt
+  from mpl_toolkits.mplot3d import Axes3D
+except ImportError:
+  matplotlibAvailable = False
+
+
 
 # Settings:
 
@@ -36,15 +44,14 @@ if createNewInitialConditions:
 	os.system("./OpenCL_N2/nbodyocl gpu plummer.data OpenCL_N2/nbody_n2_kernel.cl")
 	
 
-
-if MakePositionsVideo or MakeDistributionsVideo:
-	
-	print("beginning to make plots/video...")	
-	
-	if MakePositionsVideo:
-		MakeVideo(galaxyNumPts, "out_opencl.data", True)
-	if MakeDistributionsVideo:
-		MakeVideo(galaxyNumPts, "out_opencl.data", False)
+if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
+		
+    print("beginning to make plots/video...")
+		
+    if MakePositionsVideo:
+        MakeVideo(galaxyNumPts, "out_opencl.data", True)
+    if MakeDistributionsVideo:
+        MakeVideo(galaxyNumPts, "out_opencl.data", False)
 
 
 
