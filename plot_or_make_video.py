@@ -9,7 +9,8 @@ try:
 except ImportError:
   matplotlibAvailable = False
 
-def MakeVideo(npts, datafilename, boolTrueIfPositionsVideo_FalseIfDistributionsVideo):
+def MakeVideo(npts, datafilename, boolTrueIfPositionsVideo_FalseIfDistributionsVideo,
+		AxisLimitsKPC = 5, UseImageMagickForFancierPositionsVideo = False):
 	
 	if matplotlibAvailable == False:
 		print("can't make video without matplotlib")
@@ -21,10 +22,23 @@ def MakeVideo(npts, datafilename, boolTrueIfPositionsVideo_FalseIfDistributionsV
 	
 	fin = open(datafilename, "r")
 	
-	
 	ptsx = np.zeros(npts)
 	ptsy = np.zeros(npts)
 	ptsz = np.zeros(npts)
+	
+	if UseImageMagickForFancierPositionsVideo and boolTrueIfPositionsVideo_FalseIfDistributionsVideo:
+		# plot axis -- we'll hide it in all future plots because we want to post-process the stars
+		fig = plt.figure()
+		ax = fig.add_subplot(1,1,1)
+		ax.set_xlim(-1*AxisLimitsKPC, AxisLimitsKPC)
+		ax.set_ylim(-1*AxisLimitsKPC, AxisLimitsKPC)
+		ax.set_aspect(1)
+		ax.set_xlabel('x (kpc)')
+		ax.set_ylabel('y (kpc)')
+		plt.savefig("frames/_aoutlineframe.png")
+		plt.clf()
+		plt.close()
+		os.system("convert frames/_aoutlineframe.png -negate frames/_aoutlineframe.png")
 	
 	partnum = 0
 	timestepint = 0
@@ -41,17 +55,27 @@ def MakeVideo(npts, datafilename, boolTrueIfPositionsVideo_FalseIfDistributionsV
 				
 				ax.scatter(ptsx, ptsy, ptsz)
 				
-				ax.set_xlim(-5, 5)
-				ax.set_ylim(-5, 5)
+				ax.set_xlim(-1*AxisLimitsKPC, AxisLimitsKPC)
+				ax.set_ylim(-1*AxisLimitsKPC, AxisLimitsKPC)
 				ax.set_aspect(1)
-				ax.set_xlabel('x (kpc)')
-				ax.set_ylabel('y (kpc)')
-				ax.set_title("time: "+str(timestepint))
+				
+				if UseImageMagickForFancierPositionsVideo:
+					ax.get_xaxis().set_visible(False)
+					ax.get_yaxis().set_visible(False)
+					ax.set_frame_on(False)
+				else:
+					ax.set_title("time: "+str(timestepint))
+					ax.set_xlabel('x (kpc)')
+					ax.set_ylabel('y (kpc)')
 				
 				fname = "frames/_tmp%03d.png"%timestepint
 				plt.savefig(fname)
 				plt.clf()
 				plt.close()
+				
+				if UseImageMagickForFancierPositionsVideo:
+					os.system("convert "+fname+" -negate -gaussian-blur 7x2 -contrast "+fname)
+					os.system("composite -compose plus "+fname+" frames/_aoutlineframe.png "+fname)
 			
 			else:
 				radiiForPlotting = np.sqrt(np.power(ptsx,2.0) + np.power(ptsy,2.0) + np.power(ptsz,2.0))

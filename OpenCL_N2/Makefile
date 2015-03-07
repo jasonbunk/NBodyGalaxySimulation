@@ -13,7 +13,7 @@ CXXFLAGS = -Wall -Ipath-OpenCL-include -std=c++11 -framework OpenCL
 LFLAGS = -Wall -framework OpenCL
 endif
 
-%.o: %.c $(DEPS)
+%.o: %.cpp $(DEPS)
 	$(CXX) -c -o $@ $< $(CXXFLAGS)
 
 nbodyocl: $(OBJS)
