@@ -83,8 +83,10 @@ void OpenCLContextAndDevices::Init(std::string deviceType, bool profiling /*=fal
 	//---------------------------------------------
 	//OpenCL CommandQueue
 	if(profiling) {
+		cout<<"profiling ENABLED"<<endl;
 		myQueue = new cl::CommandQueue(GetContext(), GetDevices()[GetDeviceNumUsed()], CL_QUEUE_PROFILING_ENABLE);
 	} else {
+		cout<<"profiling disabled"<<endl;
 		myQueue = new cl::CommandQueue(GetContext(), GetDevices()[GetDeviceNumUsed()], 0);
 	}
 	

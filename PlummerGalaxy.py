@@ -51,7 +51,7 @@ class PlummerGalaxy(InitialConditions):
 		#radii = np.power(np.power(randnums,-2/3)-1, -1/2)
 		
 		#=================================================================================
-		if matplotlibAvailable:
+		if matplotlibAvailable and False:
 			# Plot radii to ensure we match the desired distribution
 			
 			radiiForPlotting = radii.copy()

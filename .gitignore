@@ -17,7 +17,13 @@ aarseth
 *.o
 
 #ignore compiled OpenCL nbody code
-OpenCL_N2/nbodyocl
+nbodyocl
 
 #Apple generates this?
 .DS_Store
+
+#ignore code::blocks' files
+*.layout
+*.depend
+#ignore renderer executable
+Renderer3D

@@ -9,8 +9,8 @@ try:
 except ImportError:
   matplotlibAvailable = False
 
-def MakeVideo(npts, datafilename, boolTrueIfPositionsVideo_FalseIfDistributionsVideo,
-		AxisLimitsKPC = 5, UseImageMagickForFancierPositionsVideo = False):
+def MakeVideo(npts, datafilename, videoOutFilename, boolTrueIfPositionsVideo_FalseIfDistributionsVideo,
+		AxisLimitsKPC = 5, UseImageMagickForFancierPositionsVideo = False, ScatterPlotPointSizeGiven=-1):
 	
 	if matplotlibAvailable == False:
 		print("can't make video without matplotlib")
@@ -45,18 +45,22 @@ def MakeVideo(npts, datafilename, boolTrueIfPositionsVideo_FalseIfDistributionsV
 	for line in fin:   # iterate over each line
 	
 		ptsx[partnum], ptsy[partnum], ptsz[partnum] = line.split()   # split line by whitespace
-	
+		
 		#print("pt_"+str(partnum)+" == ("+str(ptsx[partnum])+", "+str(ptsy[partnum])+", "+str(ptsz[partnum])+")")
-	
+		
 		if partnum >= (npts-1):
 			if boolTrueIfPositionsVideo_FalseIfDistributionsVideo:
 				fig = plt.figure()
-				ax = fig.add_subplot(1,1,1)
+				ax = fig.add_subplot(1,1,1, projection='3d')
 				
-				ax.scatter(ptsx, ptsy, ptsz)
+				if ScatterPlotPointSizeGiven > 0:
+					ax.scatter(ptsx, ptsy, ptsz, c='b', marker='o', s=ScatterPlotPointSizeGiven)
+				else:
+					ax.scatter(ptsx, ptsy, ptsz, c='b', marker='o', s=3)
 				
 				ax.set_xlim(-1*AxisLimitsKPC, AxisLimitsKPC)
 				ax.set_ylim(-1*AxisLimitsKPC, AxisLimitsKPC)
+				ax.set_zlim(-1*AxisLimitsKPC, AxisLimitsKPC)
 				ax.set_aspect(1)
 				
 				if UseImageMagickForFancierPositionsVideo:
@@ -103,8 +107,8 @@ def MakeVideo(npts, datafilename, boolTrueIfPositionsVideo_FalseIfDistributionsV
 	
 	fin.close()
 	
-	print('Making movie video.avi - this make take a while')
-	os.system("ffmpeg -r 15 -f image2 -i 'frames/_tmp%03d.png' -qscale 0 'video.avi'")
+	print("Making movie "+str(videoOutFilename)+"video.avi - this make take a while")
+	os.system("ffmpeg -r 30 -f image2 -i 'frames/_tmp%03d.png' -qscale 0 '"+str(videoOutFilename)+"'")
 	os.system("rm frames/*.png")
 
 

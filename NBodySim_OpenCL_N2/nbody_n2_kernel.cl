@@ -39,3 +39,4 @@ __kernel void nbody_kern_func_main(
 	pos_new[gti] = p;
 	vel[gti] = v;
 }
+

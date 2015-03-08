@@ -3,6 +3,7 @@ import math
 import numpy as np
 from PlummerGalaxy import PlummerGalaxy
 from InitialConditions import InitialConditions
+from plot_or_make_video import MakeVideo
 import imp
 try:
     imp.find_module('matplotlib')
@@ -15,41 +16,44 @@ except ImportError:
 
 # Settings:
 
-TotalNumPts = 6000
+TotalNumPts = 8192
 
 createNewInitialConditions = True
 
 MakePositionsVideo = True
-MakeDistributionsVideo = False
-
-UseImageMagickForFancierVideo = False
+UseImageMagickForFancierVideo = True
 
 #=================================================================================
 if createNewInitialConditions:
+	
+	print("compiling OpenCL C++ code...")
+	os.system("(cd NBodySim_OpenCL_N2 && make)")
 	
 	galaxy1 = PlummerGalaxy()
 	galaxy1.npts = (TotalNumPts/2)
 	galaxy1.R = 1.0
 	galaxy1.ZeroVelocities_Bool = False
-	galaxy1.GenerateInitialConditions(-2.5, -2.5, 0)
+	galaxy1.GenerateInitialConditions(-4, -4, 0)
 	
 	galaxy2 =PlummerGalaxy()
 	galaxy2.npts = (TotalNumPts/2)
 	galaxy2.R = 1.0
 	galaxy2.ZeroVelocities_Bool = False
-	galaxy2.GenerateInitialConditions(2.5, 2.5, 0)
+	galaxy2.GenerateInitialConditions(4, 4, 0)
+	
+	timeStep = 0.15
+	timeMax = 150.0
+	epssqd = 0.05
 	
 	bothGalaxies = InitialConditions()
 	bothGalaxies.extend(galaxy1)
 	bothGalaxies.extend(galaxy2)
-	AarsethHeader = str(TotalNumPts)+"  0.05  0.15  30.0  0.10\n"
+	AarsethHeader = str(TotalNumPts)+" 0.0 "+str(timeStep)+" "+str(timeMax)+" "+str(epssqd)+"\n"
 	bothGalaxies.WriteInitialConditionsToFile("two_plummers_collision.data", AarsethHeader)
 	
-	print("compiling Aarseth c code...")
-	os.system("(cd Aarseth && make)")
+	print("Running compiled OpenCL C++ nbody code (on GPU) on Plummer initial conditions file")
+	os.system("./NBodySim_OpenCL_N2/nbodyocl gpu two_plummers_collision.data NBodySim_OpenCL_N2/nbody_kernel_verlet.cl")
 	
-	print("Running compiled Aarseth nbody code on Plummer initial conditions file")
-	os.system("./Aarseth/aarseth two_plummers_collision.data")
 
 
 if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
@@ -57,9 +61,8 @@ if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
 	print("beginning to make plots/video...")
 	
 	if MakePositionsVideo:
-		MakeVideo(galaxyNumPts, "out_aarseth_npts_"+str(TotalNumPts)+".data", "video_two_plummer_collision.avi", True)
-	if MakeDistributionsVideo:
-		MakeVideo(galaxyNumPts, "out_aarseth_npts_"+str(TotalNumPts)+".data", "video_two_plummer_collision_distributions.avi", False)
+		MakeVideo(TotalNumPts, "out_opencl.data", "video_two_plummer_collision.avi", True, 8, UseImageMagickForFancierVideo)
+
 
 
 

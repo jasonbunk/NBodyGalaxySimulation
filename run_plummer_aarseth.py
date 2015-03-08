@@ -17,11 +17,10 @@ except ImportError:
 
 createNewInitialConditions = True
 
-MakePositionsVideo = True
+MakePositionsVideo = False
 MakeDistributionsVideo = False
 
-galaxyNumPts = 1000
-
+galaxyNumPts = 2048
 
 #=================================================================================
 if createNewInitialConditions:
@@ -31,19 +30,19 @@ if createNewInitialConditions:
 	newGalaxy.npts = galaxyNumPts
 	newGalaxy.R = 1.0
 	newGalaxy.timestep = 0.1
-	newGalaxy.timemax = 2.0
+	newGalaxy.timemax = 12.0
+	newGalaxy.ZeroVelocities_Bool = False
 	newGalaxy.Aarseth_eta = 0.05
 	newGalaxy.Aarseth_eps_sqd = 0.05
-	newGalaxy.ZeroVelocities_Bool = True
 	
 	newGalaxy.GenerateInitialConditions(0,0,0)
 	newGalaxy.WriteToFile("plummer.data")
 	
 	print("compiling Aarseth c code...")
-	os.system("(cd Aarseth && make)")
-    
+	os.system("(cd NBodySim_Aarseth && make)")
+    	
 	print("Running compiled Aarseth nbody code on Plummer initial conditions file")
-	os.system("./Aarseth/aarseth plummer.data")
+	os.system("./NBodySim_Aarseth/aarseth plummer.data")
 
 
 if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
@@ -51,8 +50,8 @@ if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
 	print("beginning to make plots/video...")	
 	
 	if MakePositionsVideo:
-		MakeVideo(galaxyNumPts, "out_aarseth_npts_"+str(galaxyNumPts)+".data", True)
+		MakeVideo(galaxyNumPts, "out_aarseth_npts_"+str(galaxyNumPts)+".data", "video_aarseth_positions.avi", True)
 	if MakeDistributionsVideo:
-		MakeVideo(galaxyNumPts, "out_aarseth_npts_"+str(galaxyNumPts)+".data", False)
+		MakeVideo(galaxyNumPts, "out_aarseth_npts_"+str(galaxyNumPts)+".data", "video_aarseth_pos_distribution.avi", False)
 
 

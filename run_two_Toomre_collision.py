@@ -1,8 +1,9 @@
 import os
 import math
 import numpy as np
-from PlummerGalaxy import PlummerGalaxy
 from InitialConditions import InitialConditions
+from ToomreDiskGalaxy import ToomreDiskGalaxy
+from plot_or_make_video import MakeVideo
 import imp
 try:
     imp.find_module('matplotlib')
@@ -15,7 +16,7 @@ except ImportError:
 
 # Settings:
 
-TotalNumPts = 6000
+TotalNumPts = 2
 
 createNewInitialConditions = True
 
@@ -27,29 +28,23 @@ UseImageMagickForFancierVideo = False
 #=================================================================================
 if createNewInitialConditions:
 	
-	galaxy1 = PlummerGalaxy()
-	galaxy1.npts = (TotalNumPts/2)
-	galaxy1.R = 1.0
-	galaxy1.ZeroVelocities_Bool = False
-	galaxy1.GenerateInitialConditions(-2.5, -2.5, 0)
+	galaxy1 = ToomreDiskGalaxy()
+	galaxy1.GenerateInitialConditions(62.5, 0, 0,  0, 20, 0)
 	
-	galaxy2 =PlummerGalaxy()
-	galaxy2.npts = (TotalNumPts/2)
-	galaxy2.R = 1.0
-	galaxy2.ZeroVelocities_Bool = False
-	galaxy2.GenerateInitialConditions(2.5, 2.5, 0)
+	galaxy2 = ToomreDiskGalaxy()
+	galaxy2.GenerateInitialConditions(-62.5, 0, 0,  0, -20, 0)
 	
 	bothGalaxies = InitialConditions()
 	bothGalaxies.extend(galaxy1)
 	bothGalaxies.extend(galaxy2)
-	AarsethHeader = str(TotalNumPts)+"  0.05  0.15  30.0  0.10\n"
-	bothGalaxies.WriteInitialConditionsToFile("two_plummers_collision.data", AarsethHeader)
+	AarsethHeader = str(TotalNumPts)+"  0.01  0.1  30.0  0.01\n"
+	bothGalaxies.WriteInitialConditionsToFile("two_toomres_collision.data", AarsethHeader)
 	
 	print("compiling Aarseth c code...")
-	os.system("(cd Aarseth && make)")
+	os.system("(cd NBodySim_Aarseth && make)")
 	
 	print("Running compiled Aarseth nbody code on Plummer initial conditions file")
-	os.system("./Aarseth/aarseth two_plummers_collision.data")
+	os.system("./NBodySim_Aarseth/aarseth two_toomres_collision.data")
 
 
 if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
@@ -57,9 +52,9 @@ if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
 	print("beginning to make plots/video...")
 	
 	if MakePositionsVideo:
-		MakeVideo(galaxyNumPts, "out_aarseth_npts_"+str(TotalNumPts)+".data", "video_two_plummer_collision.avi", True)
+		MakeVideo(TotalNumPts, "out_aarseth_npts_"+str(TotalNumPts)+".data", "video_twotoomre_collision.avi", True, 75, False, 200)
 	if MakeDistributionsVideo:
-		MakeVideo(galaxyNumPts, "out_aarseth_npts_"+str(TotalNumPts)+".data", "video_two_plummer_collision_distributions.avi", False)
+		MakeVideo(TotalNumPts, "out_aarseth_npts_"+str(TotalNumPts)+".data", "video_twotoomre_collision_distributions.avi", False, 75)
 
 
 

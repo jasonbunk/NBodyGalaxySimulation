@@ -5,28 +5,29 @@ from PlummerGalaxy import PlummerGalaxy
 from plot_or_make_video import MakeVideo
 import imp
 try:
-    imp.find_module('matplotlib')
-    matplotlibAvailable = True
-    import matplotlib.pyplot as plt
-    from mpl_toolkits.mplot3d import Axes3D
+  imp.find_module('matplotlib')
+  matplotlibAvailable = True
+  import matplotlib.pyplot as plt
+  from mpl_toolkits.mplot3d import Axes3D
 except ImportError:
-    matplotlibAvailable = False
+  matplotlibAvailable = False
+
 
 
 # Settings:
 
 createNewInitialConditions = True
 
-MakePositionsVideo = True
-MakeDistributionsVideo = True
+MakePositionsVideo = False
+MakeDistributionsVideo = False
 
 galaxyNumPts = 2048
 
 #=================================================================================
 if createNewInitialConditions:
 	
-	print("compiling OpenCL C++ code...")
-	os.system("(cd NBodySim_OpenCL_N2 && make)")
+	print("compiling SimpleCPU NBody C++ code...")
+	os.system("(cd NBodySim_SimpleCPU && make)")
 	
 	print("generating Plummer galaxy...")
 	newGalaxy = PlummerGalaxy()
@@ -39,8 +40,8 @@ if createNewInitialConditions:
 	newGalaxy.GenerateInitialConditions(0,0,0)
 	newGalaxy.WriteToFile("plummer.data")
 	
-	print("Running compiled OpenCL C++ nbody code (on GPU) on Plummer initial conditions file")
-	os.system("./NBodySim_OpenCL_N2/nbodyocl gpu plummer.data NBodySim_OpenCL_N2/nbody_kernel_verlet.cl")
+	print("Running compiled SimpleCPU NBody C++ code on Plummer initial conditions file")
+	os.system("./NBodySim_SimpleCPU/nbodycpp plummer.data")
 	
 
 if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
@@ -48,9 +49,9 @@ if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
     print("beginning to make plots/video...")
 		
     if MakePositionsVideo:
-        MakeVideo(galaxyNumPts, "out_opencl.data", "video_cl_positions.avi", True)
+        MakeVideo(galaxyNumPts, "out_simplecpu.data", "video_cppnbody_positions.avi", True)
     if MakeDistributionsVideo:
-        MakeVideo(galaxyNumPts, "out_opencl.data", "video_cl_pos_distribution.avi", False)
+        MakeVideo(galaxyNumPts, "out_simplecpu.data", "video_cppnbody_pos_distribution.avi", False)
 
 
 

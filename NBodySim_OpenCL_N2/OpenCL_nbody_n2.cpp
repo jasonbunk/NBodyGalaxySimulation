@@ -31,7 +31,7 @@
 using std::cout; using std::endl;
 
 
-#define PROFILING // Define to see the time the kernel takes
+//#define PROFILING // Define to see the time the kernel takes
 
 //=====================================================================================================
 // Miscellaneous
@@ -83,17 +83,20 @@ static void writeParticles(FILE* outputFile, const std::vector<cl_float4> & posi
 
 int main(int argc, char* argv[])
 {
-	srand(time(NULL));
 	cl_int err;
 	if(argc < 3) {
 		cout<<"Usage:  [cpu/gpu]  [InitialConditionsFilename]  [optional:specifykernel]"<<endl;
 		exit(1);
 	}
-	std::string kernelFilename("nbody_n2_kernel.cl");
+	std::string kernelFilename("nbody_kernel_verlet.cl");
 	if(argc >= 4) kernelFilename = std::string(argv[3]);
 	
 	
+#ifdef PROFILING
+	OpenCLContextAndDevices ctxtAndDevcs(argv[1], true);
+#else
 	OpenCLContextAndDevices ctxtAndDevcs(argv[1], false);
+#endif
 	
 	OpenCLKernelComputationClass kernelClass(ctxtAndDevcs);
 	kernelClass.LoadKernel(kernelFilename, "nbody_kern_func_main");
@@ -102,9 +105,9 @@ int main(int argc, char* argv[])
 	int nparticles; // should be a nice power of two for simplicity
 	int nsteps;
 	
-	int nburst = 4;  // this is the number of steps before reading back from GPU
+	int nburst = 6;  // this is the number of steps before reading back from GPU
 			 // should divide the value of nstep without remainder...
-			 // MUST be divisible by two because of the way we leapfrog pos_new / pos_old
+			 // MUST be divisible by three
 	
 	int nthreads = 32; // should be the maximum number of work-items per work-group
 	float dt;
@@ -128,9 +131,35 @@ int main(int argc, char* argv[])
 	cout<<"simulation will use "<<nparticles<<" particles"<<endl;
 	
 	std::vector<cl_float4> positions_host(nparticles);
-	std::vector<cl_float4> velocitys_host(nparticles);
 	
-	readParticles(inputFile, positions_host, velocitys_host);
+	std::vector<cl_float4> velocitysInitial(nparticles);
+	std::vector<cl_float4> positionsOneStepBackForVerlet(nparticles);
+	
+	readParticles(inputFile, positionsOneStepBackForVerlet, velocitysInitial);
+	
+	cl_float4 accelerationsInitial;
+	cl_float atemp0, atemp1, atemp2;
+	cl_float temp;
+	for(int i=0; i<nparticles; i++) {
+		accelerationsInitial.s[0] = accelerationsInitial.s[1] = accelerationsInitial.s[2] = accelerationsInitial.s[3] = 0.0f;
+		for(int j=0; j<nparticles; j++) {
+			if(i != j) {
+				atemp0 = positionsOneStepBackForVerlet[j].s[0] - positionsOneStepBackForVerlet[i].s[0];
+				atemp1 = positionsOneStepBackForVerlet[j].s[1] - positionsOneStepBackForVerlet[i].s[1];
+				atemp2 = positionsOneStepBackForVerlet[j].s[2] - positionsOneStepBackForVerlet[i].s[2];
+				temp = sqrt(atemp0*atemp0 + atemp1*atemp1 + atemp2*atemp2);
+				temp = positionsOneStepBackForVerlet[j].s[3] / (temp*temp*temp); //G==1
+				
+				accelerationsInitial.s[0] += atemp0*temp;
+				accelerationsInitial.s[1] += atemp1*temp;
+				accelerationsInitial.s[2] += atemp2*temp;
+			}
+		}
+		positions_host[i].s[0] = positionsOneStepBackForVerlet[i].s[0] + dt*velocitysInitial[i].s[0] + 0.5f*dt*dt*accelerationsInitial.s[0];
+		positions_host[i].s[1] = positionsOneStepBackForVerlet[i].s[1] + dt*velocitysInitial[i].s[1] + 0.5f*dt*dt*accelerationsInitial.s[1];
+		positions_host[i].s[2] = positionsOneStepBackForVerlet[i].s[2] + dt*velocitysInitial[i].s[2] + 0.5f*dt*dt*accelerationsInitial.s[2];
+		positions_host[i].s[3] = positionsOneStepBackForVerlet[i].s[3];
+	}
 	
 	//save initial conditions as first frame of output
 	FILE * outputFile = fopen(outputFileName.c_str(), "w");
@@ -138,6 +167,7 @@ int main(int argc, char* argv[])
 		cout<<"Error: unable to open output file for saving output: \""<<outputFileName<<"\""<<endl;
 		return 1;
 	}
+	writeParticles(outputFile, positionsOneStepBackForVerlet);
 	writeParticles(outputFile, positions_host);
 	//------------------------------------------------------------
 	
@@ -148,24 +178,26 @@ int main(int argc, char* argv[])
 	
 	cl::Buffer* positionsAABuf = kernelClass.CreateBufForKernel(sizeOfPosArrays, CL_MEM_READ_WRITE, &err);	CheckCLErr(err, "cl::Buffer::Buffer()");
 	cl::Buffer* positionsBBBuf = kernelClass.CreateBufForKernel(sizeOfPosArrays, CL_MEM_READ_WRITE, &err);	CheckCLErr(err, "cl::Buffer::Buffer()");
-	cl::Buffer* velocitysBuf = kernelClass.CreateBufForKernel(sizeOfPosArrays, CL_MEM_READ_WRITE, &err);	CheckCLErr(err, "cl::Buffer::Buffer()");
+	cl::Buffer* positionsCCBuf = kernelClass.CreateBufForKernel(sizeOfPosArrays, CL_MEM_READ_WRITE, &err);	CheckCLErr(err, "cl::Buffer::Buffer()");
 	
 	cout<<"setting kernel args"<<endl;
 	
 	err = kernelClass.GetKernel().setArg(0, dt);				CheckCLErr(err, "kernelClass.GetKernel().setArg(0)");
 	err = kernelClass.GetKernel().setArg(1, epssqd);			CheckCLErr(err, "kernelClass.GetKernel().setArg(1)");
-	err = kernelClass.GetKernel().setArg(2, *positionsAABuf); /*"old"*/	CheckCLErr(err, "kernelClass.GetKernel().setArg(2)");
-	err = kernelClass.GetKernel().setArg(3, *positionsBBBuf); /*"new"*/	CheckCLErr(err, "kernelClass.GetKernel().setArg(3)");
-	err = kernelClass.GetKernel().setArg(4, *velocitysBuf);			CheckCLErr(err, "kernelClass.GetKernel().setArg(4)");
-	err = kernelClass.GetKernel().setArg(5, cl::Local(sizeOfPCache));			CheckCLErr(err, "kernelClass.GetKernel().setArg(5)");
+	err = kernelClass.GetKernel().setArg(2, *positionsAABuf);		CheckCLErr(err, "kernelClass.GetKernel().setArg(2)");
+	err = kernelClass.GetKernel().setArg(3, *positionsBBBuf);		CheckCLErr(err, "kernelClass.GetKernel().setArg(3)");
+	err = kernelClass.GetKernel().setArg(4, *positionsCCBuf);		CheckCLErr(err, "kernelClass.GetKernel().setArg(4)");
+	err = kernelClass.GetKernel().setArg(5, cl::Local(sizeOfPCache));	CheckCLErr(err, "kernelClass.GetKernel().setArg(5)");
 	
 	cout<<"writing video memory to GPU (i.e. queueing write buffer)"<<endl;
 	
 	//the CL_TRUE or CL_FALSE indicates whether the write is blocking
-	err = ctxtAndDevcs.GetQueue().enqueueWriteBuffer(*positionsAABuf, CL_TRUE, 0, sizeOfPosArrays, &(positions_host[0]));
+	err = ctxtAndDevcs.GetQueue().enqueueWriteBuffer(*positionsAABuf, CL_TRUE, 0, sizeOfPosArrays, &(positionsOneStepBackForVerlet[0]));
+	CheckCLErr(err, "enqueueWriteBuffer() with positionsOneStepBackForVerlet");
+	err = ctxtAndDevcs.GetQueue().enqueueWriteBuffer(*positionsBBBuf, CL_TRUE, 0, sizeOfPosArrays, &(positions_host[0]));
 	CheckCLErr(err, "enqueueWriteBuffer() with positions_host");
-	err = ctxtAndDevcs.GetQueue().enqueueWriteBuffer(*velocitysBuf,   CL_TRUE, 0, sizeOfPosArrays, &(velocitys_host[0]));
-	CheckCLErr(err, "enqueueWriteBuffer() with velocitys_host");
+	err = ctxtAndDevcs.GetQueue().enqueueWriteBuffer(*positionsCCBuf, CL_TRUE, 0, sizeOfPosArrays, &(positions_host[0]));
+	CheckCLErr(err, "enqueueWriteBuffer() with positions_host on buf CC to save masses");
 	
 	
 	cout<<"beginning main loop"<<endl;
@@ -173,10 +205,11 @@ int main(int argc, char* argv[])
 	cl::Event event;
 	
 	for(int step=0; step<nsteps; step+=nburst) {
-		for(int burst=0; burst<nburst; burst+=2) {
+		for(int burst=0; burst<nburst; burst+=3) {
 			
-			err = kernelClass.GetKernel().setArg(2, *positionsAABuf); CheckCLErr(err, "kernel.setArg(intermediate-old)");
-			err = kernelClass.GetKernel().setArg(3, *positionsBBBuf); CheckCLErr(err, "kernel.setArg(intermediate-new)");
+			err = kernelClass.GetKernel().setArg(2, *positionsAABuf); CheckCLErr(err, "kernel.setArg(2) loop-0");
+			err = kernelClass.GetKernel().setArg(3, *positionsBBBuf); CheckCLErr(err, "kernel.setArg(3) loop-0");
+			err = kernelClass.GetKernel().setArg(4, *positionsCCBuf); CheckCLErr(err, "kernel.setArg(4) loop-0");
 			
 			err = ctxtAndDevcs.GetQueue().enqueueNDRangeKernel(kernelClass.GetKernel(),//kernel
 									cl::NullRange,		   //offset
@@ -186,28 +219,42 @@ int main(int argc, char* argv[])
 									&event);		   //event representing this execution instance
 			CheckCLErr(err, "enqueueNDRangeKernel()");
 			event.wait(); //wait until that processing is done
+			
+			err = kernelClass.GetKernel().setArg(2, *positionsBBBuf); CheckCLErr(err, "kernel.setArg(2) loop-1");
+			err = kernelClass.GetKernel().setArg(3, *positionsCCBuf); CheckCLErr(err, "kernel.setArg(3) loop-1");
+			err = kernelClass.GetKernel().setArg(4, *positionsAABuf); CheckCLErr(err, "kernel.setArg(4) loop-1");
+			
+			err = ctxtAndDevcs.GetQueue().enqueueNDRangeKernel(kernelClass.GetKernel(),//kernel
+									cl::NullRange,		   //offset
+									cl::NDRange(nparticles),   //global
+									cl::NDRange(nthreads),	   //local
+									nullptr,		   //events to finish before being queued
+									&event);		   //event representing this execution instance
+			CheckCLErr(err, "enqueueNDRangeKernel()");
+			event.wait(); //wait until that processing is done
+			
+			err = kernelClass.GetKernel().setArg(2, *positionsCCBuf); CheckCLErr(err, "kernel.setArg(2) loop-2");
+			err = kernelClass.GetKernel().setArg(3, *positionsAABuf); CheckCLErr(err, "kernel.setArg(3) loop-2");
+			err = kernelClass.GetKernel().setArg(4, *positionsBBBuf); CheckCLErr(err, "kernel.setArg(4) loop-2");
+			
+			err = ctxtAndDevcs.GetQueue().enqueueNDRangeKernel(kernelClass.GetKernel(),//kernel
+									cl::NullRange,		   //offset
+									cl::NDRange(nparticles),   //global
+									cl::NDRange(nthreads),	   //local
+									nullptr,		   //events to finish before being queued
+									&event);		   //event representing this execution instance
+			CheckCLErr(err, "enqueueNDRangeKernel()");
+			event.wait(); //wait until that processing is done
+			
 #ifdef PROFILING
 			cl_ulong start= event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
 			cl_ulong end  = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
 			double time = 1.e-9 * (((double)end)-((double)start));
 			cout << "Time for kernel to execute " << time << endl;
 #endif
-			
-			kernelClass.GetKernel().setArg(2, *positionsBBBuf); //do another update: set "old" to the "intermediate-new"
-			kernelClass.GetKernel().setArg(3, *positionsAABuf); //set "new" to the "intermediate-old"
-			
-			err = ctxtAndDevcs.GetQueue().enqueueNDRangeKernel(kernelClass.GetKernel(),//kernel
-									cl::NullRange,		   //offset
-									cl::NDRange(nparticles),   //global
-									cl::NDRange(nthreads),	   //local
-									nullptr,		   //events to finish before being queued
-									&event);		   //event representing this execution instance
-			CheckCLErr(err, "enqueueNDRangeKernel()");
-			event.wait(); //wait until that processing is done
 		}
 		
-		ctxtAndDevcs.GetQueue().enqueueReadBuffer(*positionsAABuf, CL_TRUE, 0, sizeOfPosArrays, &(positions_host[0]));
-		//ctxtAndDevcs.GetQueue().enqueueReadBuffer(*velocitysBuf,   CL_TRUE, 0, sizeOfPosArrays, &(velocitys_host[0]));
+		ctxtAndDevcs.GetQueue().enqueueReadBuffer(*positionsBBBuf, CL_TRUE, 0, sizeOfPosArrays, &(positions_host[0]));
 		
 		//save to disk
 		writeParticles(outputFile, positions_host);
@@ -218,7 +265,6 @@ int main(int argc, char* argv[])
 	//------------------------------------------------------------
 	
 	fclose(outputFile);
-	
 	
 	return 0;
 }
