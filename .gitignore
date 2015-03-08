@@ -3,6 +3,10 @@ frames/*.png
 
 #ignore compiled Aarseth code
 aarseth
+#ignore compiled OpenCL nbody code
+nbodyocl
+#ignore compiled nbodycpp code
+nbodycpp
 
 #ignore compiled Python files
 *.pyc
@@ -15,9 +19,6 @@ aarseth
 
 #ignore compiled C/C++ files
 *.o
-
-#ignore compiled OpenCL nbody code
-nbodyocl
 
 #Apple generates this?
 .DS_Store
