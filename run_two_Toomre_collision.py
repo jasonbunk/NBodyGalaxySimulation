@@ -13,14 +13,15 @@ try:
 except ImportError:
     matplotlibAvailable = False
 
+DEGREESTORAD = 0.01745329251994329577
 
 # Settings:
 
-TotalNumPts = 2
+TotalNumPts = (298*2) #596
 
 createNewInitialConditions = True
 
-MakePositionsVideo = True
+MakePositionsVideo = False
 MakeDistributionsVideo = False
 
 UseImageMagickForFancierVideo = False
@@ -28,23 +29,34 @@ UseImageMagickForFancierVideo = False
 #=================================================================================
 if createNewInitialConditions:
 	
+	print("compiling SimpleCPU NBody C++ code...")
+	os.system("(cd NBodySim_SimpleCPU && make)")
+	
 	galaxy1 = ToomreDiskGalaxy()
-	galaxy1.GenerateInitialConditions(62.5, 0, 0,  0, 20, 0)
+	galaxy1.GenerateInitialConditions(0,0,0, 0,0,0)
+	galaxy1.applyRotation(15.0*DEGREESTORAD, 0, 0)
+	galaxy1.applyOffset(100,0,0, 0,0.1,0)
 	
 	galaxy2 = ToomreDiskGalaxy()
-	galaxy2.GenerateInitialConditions(-62.5, 0, 0,  0, -20, 0)
+	galaxy2.GenerateInitialConditions(-100.0, 0, 0,  0, -0.1, 0)
+	
+	TotalNumPts = (galaxy1.npts + galaxy2.npts)
+	
+	timeStep = 0.05
+	timeMax = 4.00
+	epssqd = 0.001
 	
 	bothGalaxies = InitialConditions()
 	bothGalaxies.extend(galaxy1)
 	bothGalaxies.extend(galaxy2)
-	AarsethHeader = str(TotalNumPts)+"  0.01  0.1  30.0  0.01\n"
+	AarsethHeader = str(TotalNumPts)+" 0.0 "+str(timeStep)+" "+str(timeMax)+" "+str(epssqd)+"\n"
 	bothGalaxies.WriteInitialConditionsToFile("two_toomres_collision.data", AarsethHeader)
 	
-	print("compiling Aarseth c code...")
-	os.system("(cd NBodySim_Aarseth && make)")
+	print("Running compiled SimpleCPU NBody C++ code on Plummer initial conditions file")
+	os.system("./NBodySim_SimpleCPU/nbodycpp two_toomres_collision.data")
 	
-	print("Running compiled Aarseth nbody code on Plummer initial conditions file")
-	os.system("./NBodySim_Aarseth/aarseth two_toomres_collision.data")
+	print("launching renderer...")
+	os.system("Renderer3D/Renderer3D out_simplecpu.data 596 0 1 1")
 
 
 if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
@@ -52,9 +64,9 @@ if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
 	print("beginning to make plots/video...")
 	
 	if MakePositionsVideo:
-		MakeVideo(TotalNumPts, "out_aarseth_npts_"+str(TotalNumPts)+".data", "video_twotoomre_collision.avi", True, 75, False, 200)
+		MakeVideo(TotalNumPts, "out_opencl.data", "video_twotoomre_collision.avi", True, 75, False, 200)
 	if MakeDistributionsVideo:
-		MakeVideo(TotalNumPts, "out_aarseth_npts_"+str(TotalNumPts)+".data", "video_twotoomre_collision_distributions.avi", False, 75)
+		MakeVideo(TotalNumPts, "out_opencl.data", "video_twotoomre_collision_distributions.avi", False, 75)
 
 
 

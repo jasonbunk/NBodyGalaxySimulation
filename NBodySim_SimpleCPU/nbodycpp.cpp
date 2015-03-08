@@ -27,6 +27,11 @@
 #include <vector>
 using std::cout; using std::endl;
 
+
+//this is for the units kpc, solar masses, hundreds-of-millions-of-years
+#define NEWTONS_GRAVITY_CONSTANT 4.498309551e-8
+
+
 //=====================================================================================================
 // Miscellaneous
 
@@ -100,7 +105,7 @@ void VerletUpdate(std::vector<double> & masses,
 			if(i != j) {
 				posdiff = positionsBB[j] - positionsBB[i];
 				temp = posdiff.length();
-				accelSaved += ((posdiff*masses[j]) / (temp*temp*temp + epssqd)); //G==1
+				accelSaved += ((posdiff*NEWTONS_GRAVITY_CONSTANT*masses[j]) / (temp*temp*temp + epssqd));
 			}
 		}
 		positionsCC[i] = positionsBB[i]*2.0 - positionsAA[i] + accelSaved*dt*dt;
@@ -196,9 +201,9 @@ int main(int argc, char** argv)
 		accelSaved.zero();
 		for(int j=0; j<nparticles; j++) {
 			if(i != j) {
-				posdiff = positionsAA[j] - positionsAA[i];
+				posdiff = positionsBB[j] - positionsBB[i];
 				temp = posdiff.length();
-				accelSaved += ((posdiff*masses[j]) / (temp*temp*temp)); //G==1
+				accelSaved += ((posdiff*NEWTONS_GRAVITY_CONSTANT*masses[j]) / (temp*temp*temp + epssqd));
 			}
 		}
 		positionsBB[i] = positionsAA[i] + velocities[i]*dt + accelSaved*0.5*dt*dt;

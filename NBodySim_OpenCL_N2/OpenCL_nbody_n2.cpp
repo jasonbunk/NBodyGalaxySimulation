@@ -40,6 +40,10 @@ int RoundDoubleToInt(double x) {
 	return static_cast<int>((x>=0.0) ? floor(x+0.5) : ceil(x-0.5));
 }
 
+bool IsPowerOfTwo(unsigned int x) {
+    return (x & (x - 1)) == 0;
+}
+
 //=====================================================================================================
 // Aarseth File I/O
 
@@ -127,6 +131,11 @@ int main(int argc, char* argv[])
 	readParameters(inputFile, &nparticles, &dt, &finalTimeGiven, &epssqd);
 	dt /= float(nburst);
 	nsteps = RoundDoubleToInt(finalTimeGiven / ((double)dt));
+	
+	if(IsPowerOfTwo((unsigned int)nparticles) == false) {
+		cout<<"Error: OpenCL needs the number of particles to be a power of two!"<<endl;
+		exit(1);
+	}
 	
 	cout<<"simulation will use "<<nparticles<<" particles"<<endl;
 	

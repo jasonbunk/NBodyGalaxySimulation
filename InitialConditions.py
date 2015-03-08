@@ -1,3 +1,7 @@
+import math
+import numpy as np
+from math import cos
+from math import sin
 
 class InitialConditions:
 	
@@ -11,6 +15,43 @@ class InitialConditions:
 		self.ptsvx = []
 		self.ptsvy = []
 		self.ptsvz = []
+	
+	
+	def applyOffset(self,  offset_x, offset_y, offset_z,  offset_vx, offset_vy, offset_vz):
+		for i in range(len(self.masses)):
+			self.ptsx[i] = self.ptsx[i] + offset_x
+			self.ptsy[i] = self.ptsy[i] + offset_y
+			self.ptsz[i] = self.ptsz[i] + offset_z
+			self.ptsvx[i] = self.ptsvx[i] + offset_vx
+			self.ptsvy[i] = self.ptsvy[i] + offset_vy
+			self.ptsvz[i] = self.ptsvz[i] + offset_vz
+	
+	
+	def applyRotation(self, thetaXaxis, thetaYaxis, thetaZaxis):
+		
+		rotMatX = np.matrix([[1,0,0], [0,cos(thetaXaxis),-1.0*sin(thetaXaxis)], [0,sin(thetaXaxis),cos(thetaXaxis)]])
+		rotMatY = np.matrix([[cos(thetaYaxis),0,sin(thetaYaxis)], [0,1,0], [-1.0*sin(thetaYaxis),0,cos(thetaYaxis)]])
+		rotMatZ = np.matrix([[cos(thetaZaxis),-1.0*sin(thetaZaxis),0], [sin(thetaZaxis),cos(thetaZaxis),0], [0,0,1]])
+		
+		for i in range(len(self.masses)):
+			posvec = np.zeros((3,1))
+			posvec[0] = self.ptsx[i]
+			posvec[1] = self.ptsy[i]
+			posvec[2] = self.ptsz[i]
+			posvec = (rotMatZ * rotMatY * rotMatX) * posvec
+			self.ptsx[i] = posvec[0]
+			self.ptsy[i] = posvec[1]
+			self.ptsz[i] = posvec[2]
+			
+			velvec = np.zeros((3,1))
+			velvec[0] = self.ptsvx[i]
+			velvec[1] = self.ptsvy[i]
+			velvec[2] = self.ptsvz[i]
+			velvec = (rotMatZ * rotMatY * rotMatX) * velvec
+			self.ptsvx[i] = velvec[0]
+			self.ptsvy[i] = velvec[1]
+			self.ptsvz[i] = velvec[2]
+	
 	
 	def extend(self, other_initial_conditions):
 		self.masses.extend(other_initial_conditions.masses)

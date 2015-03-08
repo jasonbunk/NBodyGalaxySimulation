@@ -316,7 +316,9 @@ int main(int argc, char** argv)
 
 	if(font_for_debugstuff.loadFromFile("Fonts/OpenSans-Bold.ttf")==false) {
 		if(font_for_debugstuff.loadFromFile("../Fonts/OpenSans-Bold.ttf")==false) {
-			cout<<"Warning!! Could not load font Fonts/OpenSans-Bold.ttf from file!"<<endl;
+			if(font_for_debugstuff.loadFromFile("Renderer3D/Fonts/OpenSans-Bold.ttf")==false) {
+				cout<<"Warning!! Could not load font Fonts/OpenSans-Bold.ttf from file!"<<endl;
+			}
 		}
 	}
 	
