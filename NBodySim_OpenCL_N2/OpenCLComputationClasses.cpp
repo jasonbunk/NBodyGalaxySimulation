@@ -46,6 +46,10 @@ void OpenCLContextAndDevices::Init(std::string deviceType, bool profiling /*=fal
 	}
 	cl_int err;
 	
+	ListOpenCLDeviceInfo(); //print info
+	//exit(0);
+	
+	
 	cout<<"........ initializing context and devices..."<<endl;
 	
 	// handle command-line arguments
@@ -97,9 +101,6 @@ void OpenCLContextAndDevices::Init(std::string deviceType, bool profiling /*=fal
 		cout<<"profiling disabled"<<endl;
 		myQueue = new cl::CommandQueue(GetContext(), GetDevices()[GetDeviceNumUsed()], 0);
 	}
-	
-	ListOpenCLDeviceInfo(); //print info
-	//exit(0);
 	
 //} catch (cl::Error error) {
 //	cout << "caught exception: " << error.what() << '(' << error.err() << ')' << endl;

@@ -18,7 +18,11 @@ void ListOpenCLDeviceInfo()
 	clGetPlatformIDs(0, NULL, &platformCount);
 	platforms = (cl_platform_id*) malloc(sizeof(cl_platform_id) * platformCount);
 	clGetPlatformIDs(platformCount, platforms, NULL);
-
+	
+	if(platformCount == 0) {
+		printf("No OpenCL platforms available!\n");
+	}
+	
 	for (i = 0; i < platformCount; i++) {
 
 		// get all devices

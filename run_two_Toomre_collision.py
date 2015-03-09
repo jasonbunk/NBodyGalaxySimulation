@@ -60,7 +60,7 @@ if createNewInitialConditions:
 	AarsethHeader = str(TotalNumPts)+" 0.0 "+str(timeStep)+" "+str(timeMax)+" "+str(epssqd)+"\n"
 	bothGalaxies.WriteInitialConditionsToFile("two_toomres_collision.data", AarsethHeader)
 	
-	print("Running compiled SimpleCPU NBody C++ code on Plummer initial conditions file")
+	print("Running compiled SimpleCPU NBody C++ code on initial conditions file")
 	os.system("./NBodySim_SimpleCPU/nbodycpp two_toomres_collision.data "+str(GravitationalConst))
 	
 	print("launching renderer...")

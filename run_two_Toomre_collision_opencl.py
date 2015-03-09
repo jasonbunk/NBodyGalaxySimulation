@@ -1,4 +1,5 @@
 import os
+import sys
 import math
 import numpy as np
 from InitialConditions import InitialConditions
@@ -12,6 +13,17 @@ try:
     from mpl_toolkits.mplot3d import Axes3D
 except ImportError:
     matplotlibAvailable = False
+
+if len(sys.argv) <= 1:
+	print("arguments:  {cpu|gpu}  {optional:Render?}")
+	quit()
+DEVICE_CPU_OR_GPU = str(sys.argv[1])
+print("python script was told to use device == "+str(DEVICE_CPU_OR_GPU))
+
+doRender3D = True
+if len(sys.argv) > 2:
+	if str(sys.argv[2]) == "False" or str(sys.argv[2]) == "0" or str(sys.argv[2]) == "false":
+		doRender3D = False
 
 DEGREESTORAD = 0.01745329251994329577
 
@@ -66,11 +78,12 @@ if createNewInitialConditions:
 	AarsethHeader = str(TotalNumPts)+" 0.0 "+str(timeStep)+" "+str(timeMax)+" "+str(epssqd)+"\n"
 	bothGalaxies.WriteInitialConditionsToFile("two_toomres_collision.data", AarsethHeader)
 	
-	print("Running compiled OpenCL C++ nbody code (on CPU) on initial conditions file")
-	os.system("./NBodySim_OpenCL_N2/nbodyocl cpu two_toomres_collision.data NBodySim_OpenCL_N2/nbody_kernel_verlet.cl "+str(GravitationalConst))
+	print("Running compiled OpenCL C++ nbody code (on "+DEVICE_CPU_OR_GPU+") on initial conditions file")
+	os.system("./NBodySim_OpenCL_N2/nbodyocl "+DEVICE_CPU_OR_GPU+" two_toomres_collision.data NBodySim_OpenCL_N2/nbody_kernel_verlet.cl "+str(GravitationalConst))
 	
-	print("launching renderer...")
-	os.system("Renderer3D/Renderer3D out_opencl.data "+str(TotalNumPts)+" 0 1 1 Renderer3D/cposfile.txt 0")
+	if doRender3D:
+		print("launching renderer...")
+		os.system("Renderer3D/Renderer3D out_opencl.data "+str(TotalNumPts)+" 0 1 1 Renderer3D/cposfile.txt 0")
 
 
 if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
