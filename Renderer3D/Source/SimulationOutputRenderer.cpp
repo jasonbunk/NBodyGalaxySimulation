@@ -153,6 +153,9 @@ if(text_buffer != nullptr)
 		sprintf____s(text_buffer, "framesSoFar: %d", framesSoFar);
 	}
 	else if(line_n == 1) {
+		sprintf____s(text_buffer, "time: %f", ((float)framesSoFar)*0.07f);
+	}
+	else if(line_n == 2) {
 		sprintf____s(text_buffer, "object 0 was at: (%f, %f, %f)", lastDrawnStars.empty()?0.0f:((float)lastDrawnStars[0].x),
 																   lastDrawnStars.empty()?0.0f:((float)lastDrawnStars[0].y),
 																   lastDrawnStars.empty()?0.0f:((float)lastDrawnStars[0].z));
