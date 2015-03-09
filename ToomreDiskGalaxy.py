@@ -8,7 +8,6 @@ class ToomreDiskGalaxy(InitialConditions):
 
 	def __init__(self):
 		InitialConditions.__init__(self)
-		self.npts = 298  #including center
 		self.Mtot = 1e11  #just center
 		self.CollisionRmin = 25.0  #kiloparsecs
 		self.RingRmax = 0.7*self.CollisionRmin
@@ -27,6 +26,9 @@ class ToomreDiskGalaxy(InitialConditions):
 	
 	
 	def GenerateInitialConditions(self,  offset_x, offset_y, offset_z,  offset_vx, offset_vy, offset_vz):
+		
+		self.npts = 1 + (self.firstRingNumPts * self.nRings) + self.NumAdditionalPtsPerRing * (self.nRings*(self.nRings-1)/2)
+		print("This Toomre galaxy has "+str(self.npts)+" points")
 		
 		self.masses = np.zeros(self.npts)
 		self.masses[0] = self.Mtot

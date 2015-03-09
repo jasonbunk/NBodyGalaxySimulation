@@ -85,6 +85,11 @@ void ListOpenCLDeviceInfo()
 			cl_uint devmemMB = (cl_uint)(devmem / 1000000);
 			printf(" %d Device global memory (MB): %u\n", j+1, devmemMB);
 			
+			// double precision support?
+			cl_int supported;
+			clGetDeviceInfo(devices[j], CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE, sizeof(supported), &supported, NULL);
+			printf(" %d Double precision supported: %s\n", j+1, supported?"YES":"NO");
+			
 			printf("--------------------------------------------------------\n");
 		}
 		free(devices);

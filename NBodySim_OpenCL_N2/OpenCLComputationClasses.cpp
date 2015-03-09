@@ -49,7 +49,10 @@ void OpenCLContextAndDevices::Init(std::string deviceType, bool profiling /*=fal
 	cout<<"........ initializing context and devices..."<<endl;
 	
 	// handle command-line arguments
-	int deviceTypeCode = (deviceType.compare("cpu")==0 ? CL_DEVICE_TYPE_CPU : CL_DEVICE_TYPE_GPU);
+	int deviceTypeCode = (deviceType.compare("cpu") == 0 ? CL_DEVICE_TYPE_CPU : CL_DEVICE_TYPE_GPU);
+	if(deviceTypeCode == CL_DEVICE_TYPE_CPU) {
+		cout<<"will request CPU device"<<endl;
+	}
 	
 //try {
 	//---------------------------------------------
@@ -78,6 +81,11 @@ void OpenCLContextAndDevices::Init(std::string deviceType, bool profiling /*=fal
 	cout << "Found " << ((int)myDevices->size()) << " OpenCL device(s)" << endl;
 	
 	DeviceNumUsed = 0;
+	/*if(deviceTypeCode == CL_DEVICE_TYPE_CPU) {
+		DeviceNumUsed = 1;
+		cout<<"Choosing device 1, assuming that that is probably the CPU"<<endl;
+	}*/
+	
 	cout << "Will use device "<<GetDeviceNumUsed()<<endl;
 	
 	//---------------------------------------------

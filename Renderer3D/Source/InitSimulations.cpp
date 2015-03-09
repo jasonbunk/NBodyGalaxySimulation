@@ -27,7 +27,7 @@ using std::cout; using std::endl;
 void StartSimulation(int argc, char** argv)
 {
 	if(argc <= 2) {
-		cout<<"Usage:  [DATAFILE-TO-RENDER]  [NUMPARTICLES]  [AUTOSAVEIMAGES?]  [optional:showrenderfps?]  [optional:showgrid?]  [optional:camera-coords-file]"<<endl;
+		cout<<"Usage:  [DATAFILE-TO-RENDER]  [NUMPARTICLES]  [AUTOSAVEIMAGES?]  [optional:showrenderfps?]  [optional:showgrid?]  [optional:camera-coords-file]  [optional:autoplay]"<<endl;
 		exit(1);
 	}
 	SimulationOutputRenderer * simsys = new SimulationOutputRenderer();
@@ -87,6 +87,18 @@ void StartSimulation(int argc, char** argv)
 	} else {
 		gGameSystem.camera_rotation.r = 10.0;
 		gGameSystem.camera_original_r = 10.0;
+	}
+	
+	if(argc >= 8) {
+		std::string argv2(argv[7]);
+		if(argv2 == "1" || argv2 == "TRUE" || argv2 == "True" || argv2 == "true") {
+			cout<<"will autoplay at full speed..."<<endl;
+			SystemIsPaused = false;
+			gGameSystem.cheats.timescale = 1000.0; //as fast as it can read the files
+		} else {
+			cout<<"wont (will NOT) autoplay at full speed"<<endl;
+			SystemIsPaused = true;
+		}
 	}
 	
 	gGameSystem.cheats.do_largetimestep_remainders = false;

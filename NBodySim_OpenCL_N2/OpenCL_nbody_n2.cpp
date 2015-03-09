@@ -31,7 +31,21 @@
 using std::cout; using std::endl;
 
 
+#define _USE_DOUBLE_PRECISION___ 1
+
+#ifdef _USE_DOUBLE_PRECISION___
+#define myflt cl_double
+#define myflt4 cl_double4
+#else
+#define myflt cl_float
+#define myflt4 cl_float4
+#endif
+
+
 //#define PROFILING // Define to see the time the kernel takes
+
+static myflt NEWTONS_GRAVITATIONAL_CONSTANT = (myflt)1.0;
+
 
 //=====================================================================================================
 // Miscellaneous
@@ -47,7 +61,7 @@ bool IsPowerOfTwo(unsigned int x) {
 //=====================================================================================================
 // Aarseth File I/O
 
-static void readParameters(FILE* inputFile, int* numParticlesPtr, float* timeStepPtr, double* finalTimePtrDbl, float* epsilonSquaredPtr) {
+static void readParameters(FILE* inputFile, int* numParticlesPtr, myflt* timeStepPtr, double* finalTimePtrDbl, myflt* epsilonSquaredPtr) {
     printf("Enter numParticles, eta, timeStep, finalTime and epsilonSquared: ");
     fscanf(inputFile, "%i", numParticlesPtr);
     if((*numParticlesPtr) % 2 != 0)
@@ -56,26 +70,39 @@ static void readParameters(FILE* inputFile, int* numParticlesPtr, float* timeSte
                         "...perhaps even a power of 2. Entered numparticles was: %i\n", *numParticlesPtr);
         exit(1);
     }
-    float eta; fscanf(inputFile, "%f", &eta); //not used
+#ifdef _USE_DOUBLE_PRECISION___
+    myflt eta; fscanf(inputFile, "%lf", &eta); //not used
+    fscanf(inputFile, "%lf", timeStepPtr);
+    fscanf(inputFile, "%lf", finalTimePtrDbl);
+    fscanf(inputFile, "%lf", epsilonSquaredPtr);
+#else
+    myflt eta; fscanf(inputFile, "%f", &eta); //not used
     fscanf(inputFile, "%f", timeStepPtr);
     fscanf(inputFile, "%lf", finalTimePtrDbl);
     fscanf(inputFile, "%f", epsilonSquaredPtr);
+#endif
     printf("\n");
 }
-static void readParticles(FILE* inputFile, std::vector<cl_float4> & positionsAndMasses, std::vector<cl_float4> & velocities) {
-	int numParticles = positionsAndMasses.size();
+static void readParticles(FILE* inputFile, int nparticles, std::vector<myflt4> & positionsAndMasses, std::vector<myflt4> & velocities) {
 	int i, j;
-	for(i=0; i<numParticles; i++)
+	for(i=0; i<nparticles; i++)
 	{
+#ifdef _USE_DOUBLE_PRECISION___
+		fscanf(inputFile, "%lf", &(positionsAndMasses[i].s[3]));
+		for(j=0; j<3; j++)
+			fscanf(inputFile, "%lf", &(positionsAndMasses[i].s[j]));
+		for(j=0; j<3; j++)
+			fscanf(inputFile, "%lf", &(velocities[i].s[j]));
+#else
 		fscanf(inputFile, "%f", &(positionsAndMasses[i].s[3]));
 		for(j=0; j<3; j++)
 			fscanf(inputFile, "%f", &(positionsAndMasses[i].s[j]));
 		for(j=0; j<3; j++)
 			fscanf(inputFile, "%f", &(velocities[i].s[j]));
+#endif
 	}
 }
-static void writeParticles(FILE* outputFile, const std::vector<cl_float4> & positionsAndMasses) {
-	int nparticles = positionsAndMasses.size();
+static void writeParticles(FILE* outputFile, int nparticles, const std::vector<myflt4> & positionsAndMasses) {
 	for(int i=0; i<nparticles; i++) {
 		fprintf(outputFile, "%14.7g %14.7g %14.7g\n", positionsAndMasses[i].s[0], positionsAndMasses[i].s[1], positionsAndMasses[i].s[2]);
 	}
@@ -89,11 +116,12 @@ int main(int argc, char* argv[])
 {
 	cl_int err;
 	if(argc < 3) {
-		cout<<"Usage:  [cpu/gpu]  [InitialConditionsFilename]  [optional:specifykernel]"<<endl;
+		cout<<"Usage:  [cpu/gpu]  [InitialConditionsFilename]  [optional:specifykernel]  [optional:gravityconstG]"<<endl;
 		exit(1);
 	}
 	std::string kernelFilename("nbody_kernel_verlet.cl");
 	if(argc >= 4) kernelFilename = std::string(argv[3]);
+	if(argc >= 5) NEWTONS_GRAVITATIONAL_CONSTANT = atof(argv[4]);
 	
 	
 #ifdef PROFILING
@@ -106,16 +134,16 @@ int main(int argc, char* argv[])
 	kernelClass.LoadKernel(kernelFilename, "nbody_kern_func_main");
 	
 	//------------------------------------------------------- nbody settings
-	int nparticles; // should be a nice power of two for simplicity
+	int nparticles; // needs to be be a power of two
 	int nsteps;
 	
-	int nburst = 6;  // this is the number of steps before reading back from GPU
+	int nburst = 30;  // this is the number of steps before reading back from GPU
 			 // should divide the value of nstep without remainder...
 			 // MUST be divisible by three
 	
 	int nthreads = 32; // should be the maximum number of work-items per work-group
-	float dt;
-	float epssqd;
+	myflt dt;
+	myflt epssqd;
 	
 	std::string outputFileName("out_opencl.data"); //used later
 	
@@ -129,45 +157,55 @@ int main(int argc, char* argv[])
 	
 	double finalTimeGiven;
 	readParameters(inputFile, &nparticles, &dt, &finalTimeGiven, &epssqd);
-	dt /= float(nburst);
+	dt /= myflt(nburst);
 	nsteps = RoundDoubleToInt(finalTimeGiven / ((double)dt));
 	
-	if(IsPowerOfTwo((unsigned int)nparticles) == false) {
-		cout<<"Error: OpenCL needs the number of particles to be a power of two!"<<endl;
-		exit(1);
+	int numPaddingPts = 0;
+	while(IsPowerOfTwo((unsigned int)(nparticles+numPaddingPts)) == false) {
+		numPaddingPts++;
+	}
+	if(numPaddingPts > 0) {
+		cout<<"simulation will use "<<nparticles<<" real particles, and "<<numPaddingPts<<" padding particles"<<endl;
+	} else {
+		cout<<"simulation will use "<<nparticles<<" particles"<<endl;
 	}
 	
-	cout<<"simulation will use "<<nparticles<<" particles"<<endl;
+	std::vector<myflt4> positions_host(nparticles+numPaddingPts);
 	
-	std::vector<cl_float4> positions_host(nparticles);
+	std::vector<myflt4> velocitysInitial(nparticles+numPaddingPts);
+	std::vector<myflt4> positionsOneStepBackForVerlet(nparticles+numPaddingPts);
 	
-	std::vector<cl_float4> velocitysInitial(nparticles);
-	std::vector<cl_float4> positionsOneStepBackForVerlet(nparticles);
+	readParticles(inputFile, nparticles, positionsOneStepBackForVerlet, velocitysInitial);
 	
-	readParticles(inputFile, positionsOneStepBackForVerlet, velocitysInitial);
-	
-	cl_float4 accelerationsInitial;
-	cl_float atemp0, atemp1, atemp2;
-	cl_float temp;
+	myflt4 accelerationsInitial;
+	myflt atemp0, atemp1, atemp2;
+	myflt temp;
 	for(int i=0; i<nparticles; i++) {
-		accelerationsInitial.s[0] = accelerationsInitial.s[1] = accelerationsInitial.s[2] = accelerationsInitial.s[3] = 0.0f;
+		accelerationsInitial.s[0] = accelerationsInitial.s[1] = accelerationsInitial.s[2] = accelerationsInitial.s[3] = ((myflt)0.0);
 		for(int j=0; j<nparticles; j++) {
 			if(i != j) {
 				atemp0 = positionsOneStepBackForVerlet[j].s[0] - positionsOneStepBackForVerlet[i].s[0];
 				atemp1 = positionsOneStepBackForVerlet[j].s[1] - positionsOneStepBackForVerlet[i].s[1];
 				atemp2 = positionsOneStepBackForVerlet[j].s[2] - positionsOneStepBackForVerlet[i].s[2];
 				temp = sqrt(atemp0*atemp0 + atemp1*atemp1 + atemp2*atemp2);
-				temp = positionsOneStepBackForVerlet[j].s[3] / (temp*temp*temp); //G==1
+				temp = (positionsOneStepBackForVerlet[j].s[3] * (NEWTONS_GRAVITATIONAL_CONSTANT)) / (temp*temp*temp); //G==1
 				
 				accelerationsInitial.s[0] += atemp0*temp;
 				accelerationsInitial.s[1] += atemp1*temp;
 				accelerationsInitial.s[2] += atemp2*temp;
 			}
 		}
-		positions_host[i].s[0] = positionsOneStepBackForVerlet[i].s[0] + dt*velocitysInitial[i].s[0] + 0.5f*dt*dt*accelerationsInitial.s[0];
-		positions_host[i].s[1] = positionsOneStepBackForVerlet[i].s[1] + dt*velocitysInitial[i].s[1] + 0.5f*dt*dt*accelerationsInitial.s[1];
-		positions_host[i].s[2] = positionsOneStepBackForVerlet[i].s[2] + dt*velocitysInitial[i].s[2] + 0.5f*dt*dt*accelerationsInitial.s[2];
+		positions_host[i].s[0] = positionsOneStepBackForVerlet[i].s[0] + dt*velocitysInitial[i].s[0] + ((myflt)0.5)*dt*dt*accelerationsInitial.s[0];
+		positions_host[i].s[1] = positionsOneStepBackForVerlet[i].s[1] + dt*velocitysInitial[i].s[1] + ((myflt)0.5)*dt*dt*accelerationsInitial.s[1];
+		positions_host[i].s[2] = positionsOneStepBackForVerlet[i].s[2] + dt*velocitysInitial[i].s[2] + ((myflt)0.5)*dt*dt*accelerationsInitial.s[2];
 		positions_host[i].s[3] = positionsOneStepBackForVerlet[i].s[3];
+	}
+	for(int i=0; i<numPaddingPts; i++) {
+		int j = (nparticles + i);
+		positions_host[j].s[0] = positions_host[j].s[1] = positions_host[j].s[2] = positions_host[j].s[3] = ((myflt)0.0);
+		positionsOneStepBackForVerlet[j].s[0] = positionsOneStepBackForVerlet[j].s[1] = positionsOneStepBackForVerlet[j].s[2] = positionsOneStepBackForVerlet[j].s[3] = ((myflt)0.0);
+		positions_host[j].s[2] = ((myflt)i)*((myflt)0.1);
+		positionsOneStepBackForVerlet[j].s[2] = ((myflt)i)*((myflt)0.1);
 	}
 	
 	//save initial conditions as first frame of output
@@ -176,14 +214,14 @@ int main(int argc, char* argv[])
 		cout<<"Error: unable to open output file for saving output: \""<<outputFileName<<"\""<<endl;
 		return 1;
 	}
-	writeParticles(outputFile, positionsOneStepBackForVerlet);
-	writeParticles(outputFile, positions_host);
+	writeParticles(outputFile, nparticles, positionsOneStepBackForVerlet);
+	writeParticles(outputFile, nparticles, positions_host);
 	//------------------------------------------------------------
 	
 	cout<<"allocating video memory..."<<endl;
 	
-	const int sizeOfPosArrays = ((int)sizeof(cl_float4)) * nparticles;
-	const int sizeOfPCache =    ((int)sizeof(cl_float4)) * nthreads;
+	const int sizeOfPosArrays = ((int)sizeof(myflt4)) * (nparticles+numPaddingPts);
+	const int sizeOfPCache =    ((int)sizeof(myflt4)) * nthreads;
 	
 	cl::Buffer* positionsAABuf = kernelClass.CreateBufForKernel(sizeOfPosArrays, CL_MEM_READ_WRITE, &err);	CheckCLErr(err, "cl::Buffer::Buffer()");
 	cl::Buffer* positionsBBBuf = kernelClass.CreateBufForKernel(sizeOfPosArrays, CL_MEM_READ_WRITE, &err);	CheckCLErr(err, "cl::Buffer::Buffer()");
@@ -193,12 +231,14 @@ int main(int argc, char* argv[])
 	
 	err = kernelClass.GetKernel().setArg(0, dt);				CheckCLErr(err, "kernelClass.GetKernel().setArg(0)");
 	err = kernelClass.GetKernel().setArg(1, epssqd);			CheckCLErr(err, "kernelClass.GetKernel().setArg(1)");
-	err = kernelClass.GetKernel().setArg(2, *positionsAABuf);		CheckCLErr(err, "kernelClass.GetKernel().setArg(2)");
-	err = kernelClass.GetKernel().setArg(3, *positionsBBBuf);		CheckCLErr(err, "kernelClass.GetKernel().setArg(3)");
-	err = kernelClass.GetKernel().setArg(4, *positionsCCBuf);		CheckCLErr(err, "kernelClass.GetKernel().setArg(4)");
-	err = kernelClass.GetKernel().setArg(5, cl::Local(sizeOfPCache));	CheckCLErr(err, "kernelClass.GetKernel().setArg(5)");
+	err = kernelClass.GetKernel().setArg(2, NEWTONS_GRAVITATIONAL_CONSTANT);CheckCLErr(err, "kernelClass.GetKernel().setArg(2)");
+	err = kernelClass.GetKernel().setArg(3, numPaddingPts);			CheckCLErr(err, "kernelClass.GetKernel().setArg(3)");
+	err = kernelClass.GetKernel().setArg(4, *positionsAABuf);		CheckCLErr(err, "kernelClass.GetKernel().setArg(4)");
+	err = kernelClass.GetKernel().setArg(5, *positionsBBBuf);		CheckCLErr(err, "kernelClass.GetKernel().setArg(5)");
+	err = kernelClass.GetKernel().setArg(6, *positionsCCBuf);		CheckCLErr(err, "kernelClass.GetKernel().setArg(6)");
+	err = kernelClass.GetKernel().setArg(7, cl::Local(sizeOfPCache));	CheckCLErr(err, "kernelClass.GetKernel().setArg(7)");
 	
-	cout<<"writing video memory to GPU (i.e. queueing write buffer)"<<endl;
+	cout<<"writing video memory to device (i.e. queueing write buffer)"<<endl;
 	
 	//the CL_TRUE or CL_FALSE indicates whether the write is blocking
 	err = ctxtAndDevcs.GetQueue().enqueueWriteBuffer(*positionsAABuf, CL_TRUE, 0, sizeOfPosArrays, &(positionsOneStepBackForVerlet[0]));
@@ -216,39 +256,39 @@ int main(int argc, char* argv[])
 	for(int step=0; step<nsteps; step+=nburst) {
 		for(int burst=0; burst<nburst; burst+=3) {
 			
-			err = kernelClass.GetKernel().setArg(2, *positionsAABuf); CheckCLErr(err, "kernel.setArg(2) loop-0");
-			err = kernelClass.GetKernel().setArg(3, *positionsBBBuf); CheckCLErr(err, "kernel.setArg(3) loop-0");
-			err = kernelClass.GetKernel().setArg(4, *positionsCCBuf); CheckCLErr(err, "kernel.setArg(4) loop-0");
+			err = kernelClass.GetKernel().setArg(4, *positionsAABuf); CheckCLErr(err, "kernel.setArg(4) loop-0");
+			err = kernelClass.GetKernel().setArg(5, *positionsBBBuf); CheckCLErr(err, "kernel.setArg(5) loop-0");
+			err = kernelClass.GetKernel().setArg(6, *positionsCCBuf); CheckCLErr(err, "kernel.setArg(6) loop-0");
 			
 			err = ctxtAndDevcs.GetQueue().enqueueNDRangeKernel(kernelClass.GetKernel(),//kernel
 									cl::NullRange,		   //offset
-									cl::NDRange(nparticles),   //global
+									cl::NDRange(nparticles+numPaddingPts),   //global
 									cl::NDRange(nthreads),	   //local
 									nullptr,		   //events to finish before being queued
 									&event);		   //event representing this execution instance
 			CheckCLErr(err, "enqueueNDRangeKernel()");
 			event.wait(); //wait until that processing is done
 			
-			err = kernelClass.GetKernel().setArg(2, *positionsBBBuf); CheckCLErr(err, "kernel.setArg(2) loop-1");
-			err = kernelClass.GetKernel().setArg(3, *positionsCCBuf); CheckCLErr(err, "kernel.setArg(3) loop-1");
-			err = kernelClass.GetKernel().setArg(4, *positionsAABuf); CheckCLErr(err, "kernel.setArg(4) loop-1");
+			err = kernelClass.GetKernel().setArg(4, *positionsBBBuf); CheckCLErr(err, "kernel.setArg(4) loop-1");
+			err = kernelClass.GetKernel().setArg(5, *positionsCCBuf); CheckCLErr(err, "kernel.setArg(5) loop-1");
+			err = kernelClass.GetKernel().setArg(6, *positionsAABuf); CheckCLErr(err, "kernel.setArg(6) loop-1");
 			
 			err = ctxtAndDevcs.GetQueue().enqueueNDRangeKernel(kernelClass.GetKernel(),//kernel
 									cl::NullRange,		   //offset
-									cl::NDRange(nparticles),   //global
+									cl::NDRange(nparticles+numPaddingPts),   //global
 									cl::NDRange(nthreads),	   //local
 									nullptr,		   //events to finish before being queued
 									&event);		   //event representing this execution instance
 			CheckCLErr(err, "enqueueNDRangeKernel()");
 			event.wait(); //wait until that processing is done
 			
-			err = kernelClass.GetKernel().setArg(2, *positionsCCBuf); CheckCLErr(err, "kernel.setArg(2) loop-2");
-			err = kernelClass.GetKernel().setArg(3, *positionsAABuf); CheckCLErr(err, "kernel.setArg(3) loop-2");
-			err = kernelClass.GetKernel().setArg(4, *positionsBBBuf); CheckCLErr(err, "kernel.setArg(4) loop-2");
+			err = kernelClass.GetKernel().setArg(4, *positionsCCBuf); CheckCLErr(err, "kernel.setArg(4) loop-2");
+			err = kernelClass.GetKernel().setArg(5, *positionsAABuf); CheckCLErr(err, "kernel.setArg(5) loop-2");
+			err = kernelClass.GetKernel().setArg(6, *positionsBBBuf); CheckCLErr(err, "kernel.setArg(6) loop-2");
 			
 			err = ctxtAndDevcs.GetQueue().enqueueNDRangeKernel(kernelClass.GetKernel(),//kernel
 									cl::NullRange,		   //offset
-									cl::NDRange(nparticles),   //global
+									cl::NDRange(nparticles+numPaddingPts),   //global
 									cl::NDRange(nthreads),	   //local
 									nullptr,		   //events to finish before being queued
 									&event);		   //event representing this execution instance
@@ -266,10 +306,10 @@ int main(int argc, char* argv[])
 		ctxtAndDevcs.GetQueue().enqueueReadBuffer(*positionsBBBuf, CL_TRUE, 0, sizeOfPosArrays, &(positions_host[0]));
 		
 		//save to disk
-		writeParticles(outputFile, positions_host);
+		writeParticles(outputFile, nparticles, positions_host);
 		
 		//cout<<"so far, completed "<<(1+(step/nburst))<<" bursts"<<endl;
-		cout<<"simulation time elapsed: "<<(dt*((float)nburst)*((float)(1+(step/nburst))))<<endl;
+		cout<<"simulation time elapsed: "<<(dt*((myflt)nburst)*((myflt)(1+(step/nburst))))<<endl;
 	}
 	//------------------------------------------------------------
 	

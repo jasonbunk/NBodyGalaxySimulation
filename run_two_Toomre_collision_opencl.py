@@ -28,31 +28,37 @@ MakeDistributionsVideo = False
 
 UseImageMagickForFancierVideo = False
 
+initialVelocitiesFor25kpcSeparationFrom100kpc = 1.58
+initialVelocitiesFor50kpcSeparationFrom100kpc = 2.12
+initialVelocitiesFor25kpcSeparationFrom50kpc = 3.00
+
+initialVelocities = initialVelocitiesFor25kpcSeparationFrom50kpc
+
 #=================================================================================
 if createNewInitialConditions:
 	
-	print("compiling SimpleCPU NBody C++ code...")
-	os.system("(cd NBodySim_SimpleCPU && make)")
+	print("compiling OpenCL C++ code...")
+	os.system("(cd NBodySim_OpenCL_N2 && make)")
 	
 	galaxy1 = ToomreDiskGalaxy()
 	galaxy1.nRings = 11
 	galaxy1.NEWTONS_GRAVITY_CONSTANT = GravitationalConst
 	galaxy1.GenerateInitialConditions(0,0,0, 0,0,0)
 	galaxy1.applyRotation(15.0*DEGREESTORAD, 0, 0)
-	galaxy1.applyOffset(100,0,0, 0,2.12,0)
+	galaxy1.applyOffset(50,0,0, 0,initialVelocities,0)
 	
 	galaxy2 = ToomreDiskGalaxy()
 	galaxy2.nRings = 11
 	galaxy2.NEWTONS_GRAVITY_CONSTANT = GravitationalConst
 	galaxy2.GenerateInitialConditions(0,0,0,  0,0,0)
 	galaxy2.applyRotation(60.0*DEGREESTORAD, 0, 0)
-	galaxy2.applyOffset(-100,0,0, 0,-2.12,0)
+	galaxy2.applyOffset(-50,0,0, 0,-1.0*initialVelocities,0)
 	
 	TotalNumPts = (galaxy1.npts + galaxy2.npts)
 	
-	timeStep = 0.04
-	timeMax = 70.0
-	epssqd = 0.001
+	timeStep = 0.07
+	timeMax = 21.0
+	epssqd = 0.01
 	
 	bothGalaxies = InitialConditions()
 	bothGalaxies.extend(galaxy1)
@@ -60,11 +66,11 @@ if createNewInitialConditions:
 	AarsethHeader = str(TotalNumPts)+" 0.0 "+str(timeStep)+" "+str(timeMax)+" "+str(epssqd)+"\n"
 	bothGalaxies.WriteInitialConditionsToFile("two_toomres_collision.data", AarsethHeader)
 	
-	print("Running compiled SimpleCPU NBody C++ code on Plummer initial conditions file")
-	os.system("./NBodySim_SimpleCPU/nbodycpp two_toomres_collision.data "+str(GravitationalConst))
+	print("Running compiled OpenCL C++ nbody code (on CPU) on initial conditions file")
+	os.system("./NBodySim_OpenCL_N2/nbodyocl cpu two_toomres_collision.data NBodySim_OpenCL_N2/nbody_kernel_verlet.cl "+str(GravitationalConst))
 	
 	print("launching renderer...")
-	os.system("Renderer3D/Renderer3D out_simplecpu.data "+str(TotalNumPts)+" 0 1 1 Renderer3D/cposfile.txt 1")
+	os.system("Renderer3D/Renderer3D out_opencl.data "+str(TotalNumPts)+" 0 1 1 Renderer3D/cposfile.txt 0")
 
 
 if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):

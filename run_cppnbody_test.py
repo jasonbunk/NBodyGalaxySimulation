@@ -16,6 +16,8 @@ except ImportError:
 
 # Settings:
 
+GravitationalConst = 1.0
+
 createNewInitialConditions = True
 
 MakePositionsVideo = False
@@ -41,7 +43,7 @@ if createNewInitialConditions:
 	newGalaxy.WriteToFile("plummer.data")
 	
 	print("Running compiled SimpleCPU NBody C++ code on Plummer initial conditions file")
-	os.system("./NBodySim_SimpleCPU/nbodycpp plummer.data")
+	os.system("./NBodySim_SimpleCPU/nbodycpp plummer.data "+str(GravitationalConst))
 	
 
 if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):

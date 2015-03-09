@@ -28,8 +28,7 @@
 using std::cout; using std::endl;
 
 
-//this is for the units kpc, solar masses, hundreds-of-millions-of-years
-#define NEWTONS_GRAVITY_CONSTANT 4.498309551e-8
+static double NEWTONS_GRAVITY_CONSTANT = 1.0;
 
 
 //=====================================================================================================
@@ -161,10 +160,11 @@ int main(int argc, char** argv)
 	char fileToOpen[1024];
 	char fileToSaveTo[1024];
 	memset(fileToOpen,0,1024);
-	if(argc > 1) {
+	if(argc >= 3) {
 		strcpy(fileToOpen, argv[1]);
+		NEWTONS_GRAVITY_CONSTANT = atof(argv[2]);
 	} else {
-		cout<<"Usage:  [InitialConditionsFilename]"<<endl;
+		cout<<"Usage:  [InitialConditionsFilename]  [GravityConstantG]"<<endl;
 		return 1;
 	}
 	FILE * inputFile = fopen(fileToOpen, "r");

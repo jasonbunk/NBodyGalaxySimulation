@@ -53,6 +53,34 @@ class InitialConditions:
 			self.ptsvz[i] = velvec[2]
 	
 	
+	def applyRotationAboutAxis(self, th, axX, axY, axZ):
+		
+		a = 1 - cos(th)
+		s = sin(th)
+		c = cos(th)
+		
+		rotMat = np.matrix([[a*axX*axX+c, a*axX*axY-s*axZ, a*axX*axZ+s*axY], [a*axX*axY+s*axX, a*axY*axY+c, a*axY*axX-s*axX], [a*axX*axZ-s*axY, a*axY*axZ+s*axX, a*axZ*axZ+c]])					
+		
+		for i in range(len(self.masses)):
+			posvec = np.zeros((3,1))
+			posvec[0] = self.ptsx[i]
+			posvec[1] = self.ptsy[i]
+			posvec[2] = self.ptsz[i]
+			posvec = rotMat * posvec
+			self.ptsx[i] = posvec[0]
+			self.ptsy[i] = posvec[1]
+			self.ptsz[i] = posvec[2]
+			
+			velvec = np.zeros((3,1))
+			velvec[0] = self.ptsvx[i]
+			velvec[1] = self.ptsvy[i]
+			velvec[2] = self.ptsvz[i]
+			velvec = rotMat * velvec
+			self.ptsvx[i] = velvec[0]
+			self.ptsvy[i] = velvec[1]
+			self.ptsvz[i] = velvec[2]
+	
+	
 	def extend(self, other_initial_conditions):
 		self.masses.extend(other_initial_conditions.masses)
 		

@@ -16,6 +16,8 @@ except ImportError:
 
 # Settings:
 
+GravitationalConst = 1.0
+
 TotalNumPts = 8192
 
 createNewInitialConditions = True
@@ -52,7 +54,7 @@ if createNewInitialConditions:
 	bothGalaxies.WriteInitialConditionsToFile("two_plummers_collision.data", AarsethHeader)
 	
 	print("Running compiled OpenCL C++ nbody code (on GPU) on Plummer initial conditions file")
-	os.system("./NBodySim_OpenCL_N2/nbodyocl gpu two_plummers_collision.data NBodySim_OpenCL_N2/nbody_kernel_verlet.cl")
+	os.system("./NBodySim_OpenCL_N2/nbodyocl gpu two_plummers_collision.data NBodySim_OpenCL_N2/nbody_kernel_verlet.cl "+str(GravitationalConst))
 	
 
 
