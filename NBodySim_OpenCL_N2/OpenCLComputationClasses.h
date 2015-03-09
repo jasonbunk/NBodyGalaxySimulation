@@ -33,11 +33,13 @@ class OpenCLContextAndDevices
 	std::vector<cl::Device> * myDevices;
 	cl::CommandQueue * myQueue;
 	int DeviceNumUsed; //single-GPU
+	bool isCPU;
 public:
 	cl::Context & GetContext() const             {assert(myContext!=nullptr); return (*myContext);}
 	std::vector<cl::Device> & GetDevices() const {assert(myDevices!=nullptr); return (*myDevices);}
 	cl::CommandQueue & GetQueue() const          {assert(myQueue!=nullptr); return (*myQueue);}
 	int GetDeviceNumUsed() const {return DeviceNumUsed;}
+	bool IsCPU() const {return isCPU;}
 	
 	
 	//	Init()

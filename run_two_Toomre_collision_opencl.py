@@ -43,7 +43,6 @@ UseImageMagickForFancierVideo = False
 initialVelocitiesFor25kpcSeparationFrom100kpc = 1.58
 initialVelocitiesFor50kpcSeparationFrom100kpc = 2.12
 initialVelocitiesFor25kpcSeparationFrom50kpc = 3.00
-
 initialVelocities = initialVelocitiesFor25kpcSeparationFrom50kpc
 
 #=================================================================================
@@ -56,7 +55,7 @@ if createNewInitialConditions:
 	galaxy1.nRings = 11
 	galaxy1.NEWTONS_GRAVITY_CONSTANT = GravitationalConst
 	galaxy1.GenerateInitialConditions(0,0,0, 0,0,0)
-	galaxy1.applyRotation(15.0*DEGREESTORAD, 0, 0)
+	galaxy1.applyRotation(-15.0*DEGREESTORAD, 0, 0)
 	galaxy1.applyOffset(50,0,0, 0,initialVelocities,0)
 	
 	galaxy2 = ToomreDiskGalaxy()

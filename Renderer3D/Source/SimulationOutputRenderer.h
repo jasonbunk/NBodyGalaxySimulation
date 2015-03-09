@@ -29,6 +29,7 @@ public:
 	
 	void OpenDataFile(std::string filename);
 	
+	virtual int GetNumFramesDraw() {return framesSoFar;}
 	virtual void UpdateSystemStuff_EachPhysicsStep(double frametime);
 	virtual void draw();
 	virtual double GetGridWidth_ForDrawingPlanes() const;

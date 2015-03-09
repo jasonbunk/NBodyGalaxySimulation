@@ -76,9 +76,9 @@ void SimulationOutputRenderer::draw()
 	glPointParameterf(GL_POINT_FADE_THRESHOLD_SIZE, 10000.0);
 	GLfloat atten[3] = {0.0f, 0.0f, 1.0f};
 	glPointParameterfv(GL_POINT_DISTANCE_ATTENUATION, atten);
-	glPointSize(20.0); //size of stars as points
+	glPointSize(400.0); //size of stars as points
 	
-	glColor4ub(255, 255, 255, 150);
+	//glColor4ub(255, 255, 255, 255);
 	
 	
 	/*GLUquadricObj* Sphere = gluNewQuadric();
@@ -102,7 +102,16 @@ void SimulationOutputRenderer::draw()
 					needToClearLastDrawn = false;
 				}
 				lastDrawnStars.push_back(oneStarPos);
+				
+				if(particlesReadThisStep < (numParticlesPerStep/2)) {
+					glColor4ub(255, 25, 25, 255);
+				} else {
+					glColor4ub(25, 25, 255, 255);
+				}
+				
 				glVertex3d(oneStarPos.x, oneStarPos.y, oneStarPos.z);
+				
+				
 			} else {
 				cout<<"done reading file"<<endl;
 				dataFile->close();
@@ -120,7 +129,15 @@ void SimulationOutputRenderer::draw()
 		drawNextStep = false;
 	} else if(lastDrawnStars.empty()==false) {
 		glBegin(GL_POINTS);
-		for(int i=0; i<lastDrawnStars.size(); i++) {
+		int numStarsDrawnn = lastDrawnStars.size();
+		for(int i=0; i<numStarsDrawnn; i++) {
+			
+			if(i < (numStarsDrawnn/2)) {
+				glColor4ub(255, 25, 25, 255);
+			} else {
+				glColor4ub(25, 25, 255, 255);
+			}
+			
 			glVertex3d(lastDrawnStars[i].x, lastDrawnStars[i].y, lastDrawnStars[i].z);
 		}
 		glEnd();

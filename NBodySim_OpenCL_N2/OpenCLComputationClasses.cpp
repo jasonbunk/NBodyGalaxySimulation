@@ -56,6 +56,9 @@ void OpenCLContextAndDevices::Init(std::string deviceType, bool profiling /*=fal
 	int deviceTypeCode = (deviceType.compare("cpu") == 0 ? CL_DEVICE_TYPE_CPU : CL_DEVICE_TYPE_GPU);
 	if(deviceTypeCode == CL_DEVICE_TYPE_CPU) {
 		cout<<"will request CPU device"<<endl;
+		isCPU = true;
+	} else {
+		isCPU = false;
 	}
 	
 //try {

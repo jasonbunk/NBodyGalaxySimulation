@@ -14,7 +14,8 @@ public:
 	virtual bool DoFixedTimeSteps() {return false;}
 	virtual double GetFixedTimeStep_IfNeeded() {return 0.1;}
 	virtual int NumFixedTimeStepsPerFrame_IfNeeded() {return 1;}
-
+	virtual int GetNumFramesDraw() {return -1;}
+	
 	virtual void OnMouseLdown() {}
 	virtual void RespondToKeyStates() {}
 

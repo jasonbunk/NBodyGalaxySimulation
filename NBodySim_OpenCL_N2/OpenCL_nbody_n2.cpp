@@ -161,13 +161,16 @@ int main(int argc, char* argv[])
 	nsteps = RoundDoubleToInt(finalTimeGiven / ((double)dt));
 	
 	int numPaddingPts = 0;
-	while(IsPowerOfTwo((unsigned int)(nparticles+numPaddingPts)) == false) {
-		numPaddingPts++;
-	}
-	if(numPaddingPts > 0) {
-		cout<<"simulation will use "<<nparticles<<" real particles, and "<<numPaddingPts<<" padding particles"<<endl;
-	} else {
-		cout<<"simulation will use "<<nparticles<<" particles"<<endl;
+	
+	if(true){//ctxtAndDevcs.IsCPU() == false) {
+		while(IsPowerOfTwo((unsigned int)(nparticles+numPaddingPts)) == false) {
+			numPaddingPts++;
+		}
+		if(numPaddingPts > 0) {
+			cout<<"simulation will use "<<nparticles<<" real particles, and "<<numPaddingPts<<" padding particles"<<endl;
+		} else {
+			cout<<"simulation will use "<<nparticles<<" particles"<<endl;
+		}
 	}
 	
 	std::vector<myflt4> positions_host(nparticles+numPaddingPts);

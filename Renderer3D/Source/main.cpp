@@ -363,10 +363,12 @@ int main(int argc, char** argv)
 		displayFunc();
         sfml_window->display();
         
-		if(AutoSaveRenderedImages) {
+		if(AutoSaveRenderedImages && gGameSystem.physics_system != nullptr) {
 			//sfml_window->PreserveOpenGLStates(true);
 			sf::Image renderedImg = sfml_window->capture();
-			renderedImg.saveToFile("a.png");
+			char filenameout[1024];
+			sprintf(filenameout, "frames/__%05d.png", gGameSystem.physics_system->GetNumFramesDraw());
+			renderedImg.saveToFile(filenameout);
 		}
 	}
 #endif
