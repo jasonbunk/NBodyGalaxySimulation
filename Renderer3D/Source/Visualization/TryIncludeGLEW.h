@@ -2,9 +2,11 @@
 #define ___TRY_INCLUDE_GLEW_H_______
 
 
-#if THISPLATFORM == PLATFORM_WINDOWS
-#define GLEW_STATIC
-#include <GL/glew.h>
+#if THISPLATFORM == PLATFORM_MAC
+//#define GLEW_STATIC
+//#include <GL/glew.h>
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
 #else
 #define GLEW_STATIC
 #include <GL/glew.h>

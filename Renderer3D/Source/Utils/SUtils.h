@@ -2,7 +2,8 @@
 #define ___S_UTILS_HPP_____
 
 #include <string>
-#include <opencv2/core/core.hpp>
+#include <sstream>
+#include <vector>
 #include "targetplatform.h"
 
 std::vector<std::string> GetFilenamesOfTypeInFolder(std::string folder_dir_name, std::string extension_of_file);

@@ -45,7 +45,7 @@ class TIMER
     unsigned __int64 baseTime_;
 };
 
-#else//if THISPLATFORM == PLATFORM_LINUX
+#elseif THISPLATFORM == PLATFORM_LINUX
 
 #include <time.h>
 
@@ -112,6 +112,26 @@ private:
 	long int last_time_saved_ns;
 };
 
+#else
+
+#include <SFML/System/Clock.hpp>
+
+class TIMER
+{
+public:
+	sf::Clock myClock;
+
+	/// reset() makes the timer start over counting from 0.0 seconds.
+	void reset() {
+	    myClock.restart();
+	}
+
+	/// seconds() returns the number of seconds (to very high resolution)
+	/// elapsed since the timer was last created or reset().
+	double seconds() {
+	    return (double)myClock.getElapsedTime().asSeconds();
+	}
+};
 
 #endif
 

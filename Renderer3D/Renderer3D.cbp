@@ -7,14 +7,15 @@
 		<Option compiler="gcc" />
 		<Option virtualFolders="main/;Utils/;Visualization/;JPhysics/;" />
 		<Build>
-			<Target title="Debug">
+			<Target title="DebugLinux">
+				<Option platforms="Unix;" />
 				<Option output="Renderer3D" prefix_auto="1" extension_auto="1" />
-				<Option object_output="build/obj/Debug/" />
+				<Option object_output="build/obj/DebugLinux/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
-					<Add option="-std=c++11" />
 					<Add option="-g" />
+					<Add option="-std=c++11" />
 					<Add directory="Source" />
 				</Compiler>
 				<Linker>
@@ -29,9 +30,10 @@
 					<Add library="m" />
 				</Linker>
 			</Target>
-			<Target title="Release">
+			<Target title="ReleaseLinux">
+				<Option platforms="Unix;" />
 				<Option output="Renderer3D" prefix_auto="1" extension_auto="1" />
-				<Option object_output="build/obj/Release/" />
+				<Option object_output="build/obj/ReleaseLinux/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
@@ -50,6 +52,25 @@
 					<Add library="sfml-graphics" />
 					<Add library="sfml-window" />
 					<Add library="m" />
+				</Linker>
+			</Target>
+			<Target title="DebugMacOSX">
+				<Option platforms="Mac;" />
+				<Option output="Renderer3D" prefix_auto="1" extension_auto="1" />
+				<Option object_output="build/obj/DebugMacOSX/" />
+				<Option type="1" />
+				<Option compiler="clang" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+					<Add directory="Source" />
+					<Add directory="../../SFML-2.2-osx-clang-universal/include" />
+				</Compiler>
+				<Linker>
+					<Add option="-framework OpenGL" />
+					<Add library="sfml-graphics" />
+					<Add library="sfml-system" />
+					<Add directory="../../SFML-2.2-osx-clang-universal/lib" />
 				</Linker>
 			</Target>
 		</Build>
@@ -161,6 +182,7 @@
 		<Extensions>
 			<code_completion />
 			<debugger />
+			<envvars />
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>
