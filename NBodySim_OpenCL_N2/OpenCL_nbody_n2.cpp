@@ -31,7 +31,7 @@
 using std::cout; using std::endl;
 
 
-#define _USE_DOUBLE_PRECISION___ 1
+//#define _USE_DOUBLE_PRECISION___ 1
 
 #ifdef _USE_DOUBLE_PRECISION___
 #define myflt cl_double
@@ -114,6 +114,12 @@ static void writeParticles(FILE* outputFile, int nparticles, const std::vector<m
 
 int main(int argc, char* argv[])
 {
+#ifdef _USE_DOUBLE_PRECISION___
+	cout<<"NOTE: this version of nbodyocl was compiled for DOUBLE PRECISION 64-bit doubles"<<endl;
+#else
+	cout<<"NOTE: this version of nbodyocl was compiled for SINGLE PRECISION 32-bit floats"<<endl;
+#endif
+	
 	cl_int err;
 	if(argc < 3) {
 		cout<<"Usage:  [cpu/gpu]  [InitialConditionsFilename]  [optional:specifykernel]  [optional:gravityconstG]"<<endl;
@@ -137,7 +143,7 @@ int main(int argc, char* argv[])
 	int nparticles; // needs to be be a power of two
 	int nsteps;
 	
-	int nburst = 30;  // this is the number of steps before reading back from GPU
+	int nburst = 6;  // this is the number of steps before reading back from GPU
 			 // should divide the value of nstep without remainder...
 			 // MUST be divisible by three
 	
@@ -239,7 +245,7 @@ int main(int argc, char* argv[])
 	err = kernelClass.GetKernel().setArg(4, *positionsAABuf);		CheckCLErr(err, "kernelClass.GetKernel().setArg(4)");
 	err = kernelClass.GetKernel().setArg(5, *positionsBBBuf);		CheckCLErr(err, "kernelClass.GetKernel().setArg(5)");
 	err = kernelClass.GetKernel().setArg(6, *positionsCCBuf);		CheckCLErr(err, "kernelClass.GetKernel().setArg(6)");
-	err = kernelClass.GetKernel().setArg(7, cl::Local(sizeOfPCache));	CheckCLErr(err, "kernelClass.GetKernel().setArg(7)");
+	err = kernelClass.GetKernel().setArg(7, cl::__local(sizeOfPCache));	CheckCLErr(err, "kernelClass.GetKernel().setArg(7)");
 	
 	cout<<"writing video memory to device (i.e. queueing write buffer)"<<endl;
 	

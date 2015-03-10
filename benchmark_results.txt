@@ -1,0 +1,50 @@
+Single-threaded CPU code: nbodycpp (double precision)
+Galaxy S5 Active (AT&T) with CPU: Qualcomm Krait 400 Quad-core 2.5 GHz
+Toomre&Toomre 596-particle, 21 timeunits, 1800 timesteps benchmark
+
+	343 seconds
+
+
+Single-threaded CPU code: nbodycpp (double precision)
+Sony Vaio laptop with Intel i7-2620M CPU @ 2.70 GHz
+Toomre&Toomre 596-particle, 21 timeunits, 1800 timesteps benchmark
+
+	65 seconds
+
+
+Single-threaded CPU code: nbodycpp (double precision)
+iMac 21.5-inch, late 2009 with 3.06 GHz Intel Core 2 Duo
+Toomre&Toomre 596-particle, 21 timeunits, 1800 timesteps benchmark
+
+	48 seconds
+
+
+OpenCL padded to 1024 particles (double precision)
+Sony Vaio laptop with Intel i7-2620M CPU @ 2.70 GHz
+Toomre&Toomre 596-particle, 21 timeunits, 1800 timesteps benchmark
+
+	13 seconds
+
+
+OpenCL padded to 1024 particles (SINGLE precision)
+Sony Vaio laptop with Intel i7-2620M CPU @ 2.70 GHz
+Toomre&Toomre 596-particle, 21 timeunits, 1800 timesteps benchmark
+
+	8.2 seconds
+
+
+OpenCL padded to 1024 particles (SINGLE precision)
+Galaxy S5 Active (AT&T) with GPU: Qualcomm Adreno 330 (Mali)
+Toomre&Toomre 596-particle, 21 timeunits, 1800 timesteps benchmark
+
+	5.1 seconds
+
+
+OpenCL padded to 1024 particles (SINGLE precision)
+Sony Vaio laptop with AMD 6630M Graphics
+Toomre&Toomre 596-particle, 21 timeunits, 1800 timesteps benchmark
+
+	3.1 seconds
+
+
+

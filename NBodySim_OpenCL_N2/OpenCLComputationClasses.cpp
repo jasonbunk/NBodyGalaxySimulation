@@ -19,6 +19,7 @@
 
 #include "OpenCLComputationClasses.h"
 #include "ListOpenCLDeviceInfo.h"
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -128,7 +129,7 @@ void OpenCLKernelComputationClass::LoadKernel(std::string kernelFilename, std::s
 	
 	//---------------------------------------------
 	//Open and load the OpenCL compute program
-	std::ifstream file(kernelFilename);
+	std::ifstream file(kernelFilename.c_str());
 	CheckCLErr(file.is_open() ? CL_SUCCESS:-1, kernelFilename);
 	std::string prog(std::istreambuf_iterator<char>(file), (std::istreambuf_iterator<char>()));
 	cl::Program::Sources source(1, std::make_pair(prog.c_str(), prog.length()+1));

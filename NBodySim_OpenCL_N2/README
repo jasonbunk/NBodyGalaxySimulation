@@ -1,0 +1,72 @@
+Copyright 2015 Jason Bunk
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+//=====================================================================================================================
+
+NBodySim_OpenCL_N2 (with tutorial for Android simulations)
+
+NBody simulator with Verlet (Stormer) integration of O(N^2) complexity
+
+Confirmed working on Intel CPU's, ATI GPU's, NVIDIA GPU's, and Qualcomm Mali GPU's (Galaxy S5 smartphone)
+
+Benchmarks show GPU's perform much faster than CPU's, even a smartphone GPU!
+
+
+//=====================================================================================================================
+// ANDROID OPENCL GUIDE TO GALAXY SIMULATIONS
+// Note: this tutorial is written for advanced users who use Linux and are familiar with the command line
+// Also, there is no OpenGL renderer on the smartphone,
+//         so all this can do is produce an output datafile to be rendered on a laptop or desktop machine
+// These steps were followed in March 2015 so hopefully these websites and tools used will still exist in the future
+// THIS DOES NOT REQUIRE A ROOTED PHONE (YAY)
+
+
+To build on Android phones with Mali GPU's that support OpenCL 1.1:
+	
+	1. Use Android NDK buildchain for Armv7 targeting Android 4.4.2 (creates gcc, g++, etcetera)
+		install Android SDK (without the Studio version)
+		install Android NDK
+		then cd into that folder it unzips, and create a build toolchain for Armv7 (android 4.4.2 i.e. API 19):
+			./build/tools/make-standalone-toolchain.sh --arch=arm --platform=android-19 --install-dir=/mywork/androidndk-jason-standalone-armandroid19
+	
+	2. Download and install Mali OpenCL SDK v1.1.0
+		unzip somewhere
+		cd into one of the samples in the samples folder, and make (it will build the libOpenCL.so you'll need to copy to Android)
+		COPY this NBodySim_OpenCL_N2 folder into that samples folder because you'll need the Mali OpenCL SDK for the platform libraries
+		cd into that folder (NBodySim_OpenCL_N2) and type:
+			make PLATFORMTARG=android
+	
+	3. On the phone (NO ROOT REQUIRED!), install "Terminal Emulator" from Play Store (by Jack Palevich)
+		In preferences, set "Initial Command" (which runs every time it starts) to:
+			cd /data/data/jackpal.androidterm/app_HOME
+	
+	4. Create an initial conditions file on the laptop using Python ("initconditions.data") and get ready to put all this on the phone!
+	
+	5. Plug the phone into a computer and copy the following files somewhere on the phone: (make sure you can find the folder you put it in)
+			nbodyocl
+			nbody_kernel_verlet.cl
+			lib/libOpenCL.so
+			initconditions.data
+		the OpenCL library needs to come from the Mali_OpenCL_SDK_v1.1.0 folder
+		now launch Terminal Emulator and copy them to the Terminal Emulator app's home directory:
+			cp -r /FOLDER_YOU_PUT_THOSE_FILES_IN/* .
+		now tell Android the path to the libOpenCL.so library:
+			export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/data/data/jackpal.androidterm/app_HOME/lib
+		you should also add that command to the "Initial Command" argument to Terminal Emulator
+	
+	5. Launch the program on the phone! In Terminal Emulator type:
+		./nbodyocl
+		./nbodyocl gpu initconditions.data nbody_kernel_verlet.cl
+
+//=====================================================================================================================
+
+
+

@@ -23,7 +23,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
-#define _USE_DOUBLE_PRECISION___ 1
+//#define _USE_DOUBLE_PRECISION___ 1
 
 #ifdef _USE_DOUBLE_PRECISION___
 #pragma OPENCL EXTENSION cl_khr_fp64 : enable

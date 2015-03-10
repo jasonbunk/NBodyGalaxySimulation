@@ -21,6 +21,9 @@
 
 #include "IncludeOpenCL.h"
 #include <assert.h>
+#ifndef nullptr
+#define nullptr NULL
+#endif
 
 void CheckCLErr(cl_int err, const char * name);
 void CheckCLErr(cl_int err, std::string name);
