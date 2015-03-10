@@ -62,8 +62,7 @@ class ToomreDiskGalaxy(InitialConditions):
 	
 	def WriteToFile(self, outfilename):
 		
-		header = str(self.npts)+"  "+str(self.Aarseth_eta)+"  "+str(self.timestep)+"  "+str(self.timemax)+"  "+str(self.Aarseth_eps_sqd)+" \n"
-		
+		header = str(self.npts)+" "+str(self.Aarseth_eta)+" "+str(self.timestep)+" "+str(self.timemax)+" "+str(self.Aarseth_eps_sqd)+" "+str(self.NEWTONS_GRAVITY_CONSTANT)+"\n"
 		self.WriteInitialConditionsToFile(outfilename, header)
 
 

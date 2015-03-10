@@ -8,7 +8,7 @@
 
 class SimulationOutputRenderer : public SimulationSystem
 {
-	std::ifstream * dataFile;
+	FILE* dataFile;
 	int framesSoFar;
 	bool drawNextStep;
 	std::vector<phys::vec3> lastDrawnStars;
@@ -19,13 +19,13 @@ public:
 	int numParticlesPerStep;
 	
 	
-	SimulationOutputRenderer() : SimulationSystem(), dataFile(nullptr),
+	SimulationOutputRenderer() : SimulationSystem(), dataFile(NULL),
 													drawNextStep(true),
 													framesSoFar(0),
 													numParticlesPerStep(1),
 													time_accumulated_since_last_draw(0.0),
 													time_step_between_draws(0.1) {}
-	~SimulationOutputRenderer() {if(dataFile != nullptr){dataFile->close(); delete dataFile;}}
+	~SimulationOutputRenderer() {if(dataFile != NULL){fclose(dataFile); dataFile = NULL;}}
 	
 	void OpenDataFile(std::string filename);
 	

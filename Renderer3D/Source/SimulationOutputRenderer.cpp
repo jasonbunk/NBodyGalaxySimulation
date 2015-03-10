@@ -45,13 +45,8 @@ void SimulationOutputRenderer::UpdateSystemStuff_EachPhysicsStep(double frametim
 
 void SimulationOutputRenderer::OpenDataFile(std::string filename)
 {
-	if(dataFile != nullptr) {
-		cout<<"opening new datafile \""<<filename<<"\""<<endl;
-		dataFile->close();
-		delete dataFile;
-	}
-	dataFile = new std::ifstream(filename);
-	if(dataFile->is_open() && dataFile->good()) {
+	dataFile = fopen(filename.c_str(), "rb");
+	if(dataFile != NULL) {
 		cout<<"successfully opened data file!"<<endl;
 	} else {
 		cout<<"error: unable to open data file \""<<filename<<"\""<<endl;
@@ -62,6 +57,24 @@ void SimulationOutputRenderer::OpenDataFile(std::string filename)
 void SimulationOutputRenderer::RespondToKeyStates()
 {
     //if(gGameSystem.GetKeyboard()->keyboard['k']) {}
+}
+
+
+static bool ReadOnePosition(FILE* fromHere, phys::vec3 & intoHere)
+{
+	const int FLTBYTES = 4;
+	float temp;
+	
+	if(fread(&temp, FLTBYTES, 1, fromHere) < 1){return false;}
+	intoHere.x = temp;
+	
+	if(fread(&temp, FLTBYTES, 1, fromHere) < 1){return false;}
+	intoHere.y = temp;
+	
+	if(fread(&temp, FLTBYTES, 1, fromHere) < 1){return false;}
+	intoHere.z = temp;
+	
+	return true;
 }
 
 
@@ -88,7 +101,7 @@ void SimulationOutputRenderer::draw()
 	glEnd();*/
 	
 	
-	if(drawNextStep && dataFile != nullptr) {
+	if(drawNextStep && dataFile != NULL) {
 		bool needToClearLastDrawn = true;
 		phys::vec3 oneStarPos;
 		int particlesReadThisStep = 0;
@@ -96,7 +109,9 @@ void SimulationOutputRenderer::draw()
 		glBegin(GL_POINTS);
 		
 		for(; particlesReadThisStep < numParticlesPerStep; particlesReadThisStep++) {
-			if((*dataFile) >> oneStarPos.x >> oneStarPos.y >> oneStarPos.z) {
+			
+			if(ReadOnePosition(dataFile, oneStarPos)) {
+				
 				if(needToClearLastDrawn) {
 					lastDrawnStars.clear();
 					needToClearLastDrawn = false;
@@ -114,9 +129,8 @@ void SimulationOutputRenderer::draw()
 				
 			} else {
 				cout<<"done reading file"<<endl;
-				dataFile->close();
-				delete dataFile;
-				dataFile = nullptr;
+				fclose(dataFile);
+				dataFile = NULL;
 				glEnd();
 				framesSoFar++;
 				return;

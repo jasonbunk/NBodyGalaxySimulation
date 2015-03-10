@@ -115,39 +115,66 @@ void VerletUpdate(std::vector<double> & masses,
 //=====================================================================================================
 // Aarseth File I/O
 
+#define DBLBYTES 8
+#define FLTBYTES 4
+
 static void readParameters(FILE* inputFile, int* numParticlesPtr, double* timeStepPtr, double* finalTimePtrDbl, double* epsilonSquaredPtr) {
-    printf("Enter numParticles, eta, timeStep, finalTime and epsilonSquared: ");
-    fscanf(inputFile, "%i", numParticlesPtr);
-    if((*numParticlesPtr) % 2 != 0)
-    {
-        fprintf(stderr, "Error: you should use a multiple of 2 for numparticles.\n"
-                        "...perhaps even a power of 2. Entered numparticles was: %i\n", *numParticlesPtr);
-        exit(1);
-    }
-    double eta; fscanf(inputFile, "%lf", &eta); //not used
-    fscanf(inputFile, "%lf", timeStepPtr);
-    fscanf(inputFile, "%lf", finalTimePtrDbl);
-    fscanf(inputFile, "%lf", epsilonSquaredPtr);
-    printf("\n");
+	if(sizeof(double) != DBLBYTES){cout<<"WARNING: unexpected sizeof(double) == "<<sizeof(double)<<endl;}
+	double temp;
+	cout<<"Initial conditions file header should be: (0)numParticles, (1)eta, (2)timeStep, (3)finalTime, (4)epsilonSquared, (5)gravityconst_G"<<endl;
+	
+	//read numparticles
+	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 0"<<endl; exit(1);}
+	(*numParticlesPtr) = RoundDoubleToInt(temp);
+	
+	//read eta... not used
+	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 1"<<endl; exit(1);}
+	
+	//read timestep
+	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 2"<<endl; exit(1);}
+	(*timeStepPtr) = temp;
+	
+	//read finalTime
+	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 3"<<endl; exit(1);}
+	(*finalTimePtrDbl) = temp;
+	
+	//read epsilonSquared
+	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 4"<<endl; exit(1);}
+	(*epsilonSquaredPtr) = temp;
+	
+	//read G
+	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 5"<<endl; exit(1);}
+	NEWTONS_GRAVITY_CONSTANT = temp;
 }
 static void readParticles(FILE* inputFile, std::vector<double> & masses, std::vector<point> & positions, std::vector<point> & velocities) {
+	if(sizeof(double) != DBLBYTES){cout<<"WARNING: unexpected sizeof(double) == "<<sizeof(double)<<endl;}
+	double temp;
 	int numParticles = masses.size();
 	int i, j;
 	for(i=0; i<numParticles; i++)
 	{
-		fscanf(inputFile, "%lf", &(masses[i])); assert(isnan(masses[i])==false);
+		if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 6 (read "<<numParticles<<" particles before failing)"<<endl; exit(1);}
+		masses[i] = temp; assert(isnan(masses[i])==false);
 		for(j=0; j<3; j++) {
-			fscanf(inputFile, "%lf", &(positions[i].at(j))); assert(isnan(positions[i].at(j))==false);
+			if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 7 (read "<<numParticles<<" particles before failing)"<<endl; exit(1);}
+			positions[i].at(j) = temp; assert(isnan(positions[i].at(j))==false);
 		}
 		for(j=0; j<3; j++) {
-			fscanf(inputFile, "%lf", &(velocities[i].at(j))); assert(isnan(velocities[i].at(j))==false);
+			if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 8 (read "<<numParticles<<" particles before failing)"<<endl; exit(1);}
+			velocities[i].at(j) = temp; assert(isnan(velocities[i].at(j))==false);
 		}
 	}
 }
 static void writeParticles(FILE* outputFile, const std::vector<point> & positions) {
+	if(sizeof(float) != FLTBYTES){cout<<"WARNING: unexpected sizeof(float) == "<<sizeof(float)<<endl;}
+	float writeme;
 	int nparticles = positions.size();
+	size_t nwritten;
 	for(int i=0; i<nparticles; i++) {
-		fprintf(outputFile, "%14.7g %14.7g %14.7g\n", positions[i].x, positions[i].y, positions[i].z);
+		writeme=(float)positions[i].x;   nwritten  = fwrite(&writeme, FLTBYTES, 1, outputFile);
+		writeme=(float)positions[i].y;   nwritten += fwrite(&writeme, FLTBYTES, 1, outputFile);
+		writeme=(float)positions[i].z;   nwritten += fwrite(&writeme, FLTBYTES, 1, outputFile);
+		if(nwritten < 3){cout<<"Error writing to output file"<<endl; exit(1);}
 	}
 }
 
@@ -160,11 +187,10 @@ int main(int argc, char** argv)
 	char fileToOpen[1024];
 	char fileToSaveTo[1024];
 	memset(fileToOpen,0,1024);
-	if(argc >= 3) {
+	if(argc >= 2) {
 		strcpy(fileToOpen, argv[1]);
-		NEWTONS_GRAVITY_CONSTANT = atof(argv[2]);
 	} else {
-		cout<<"Usage:  [InitialConditionsFilename]  [GravityConstantG]"<<endl;
+		cout<<"Usage:  [InitialConditionsFilename]"<<endl;
 		return 1;
 	}
 	FILE * inputFile = fopen(fileToOpen, "r");

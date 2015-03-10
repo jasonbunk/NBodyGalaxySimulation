@@ -2,6 +2,7 @@ import math
 import numpy as np
 from math import cos
 from math import sin
+from struct import pack as packbinary
 
 class InitialConditions:
 	
@@ -95,6 +96,11 @@ class InitialConditions:
 	
 	def WriteInitialConditionsToFile(self, outfilename, header):
 		
+		headerNums = map(float, header.split())
+		if len(headerNums) != 6:
+			print("error: initial conditions header is not 6 numbers")
+			quit()
+		
 		if len(self.masses) != len(self.ptsx) or len(self.ptsx) != len(self.ptsy) or len(self.ptsy) != len(self.ptsz) or len(self.ptsz) != len(self.ptsvx) or len(self.ptsvx) != len(self.ptsvy) or len(self.ptsvy) != len(self.ptsvz):
 			print("error in WriteInitialConditionsToFile() -- not all arrays are the same length")
 			print("len(self.masses) == "+str(len(self.masses)))
@@ -112,13 +118,26 @@ class InitialConditions:
 		fo = open(outfilename, "w")
 		
 		# header:
-		fo.write(header)
-
+		for headerNum in headerNums:
+			fo.write(packbinary('d', headerNum)) #write as double precision binary
+		
 		# body:
 		# mass, x, y, z, vx, vy, vz
 		for i in range(len(self.masses)):
-			fo.write(str(self.masses[i])+"\t"+str(self.ptsx[i])+"\t"+str(self.ptsy[i])+"\t"+str(self.ptsz[i])+"\t"+str(self.ptsvx[i])+"\t"+str(self.ptsvy[i])+"\t"+str(self.ptsvz[i])+"\n")
+			
+			#write as double precision binary
+			fo.write(packbinary('d', self.masses[i]))
+			fo.write(packbinary('d', self.ptsx[i]))
+			fo.write(packbinary('d', self.ptsy[i]))
+			fo.write(packbinary('d', self.ptsz[i]))
+			fo.write(packbinary('d', self.ptsvx[i]))
+			fo.write(packbinary('d', self.ptsvy[i]))
+			fo.write(packbinary('d', self.ptsvz[i]))
+		
 		
 		fo.close()
 	
-	
+
+
+
+

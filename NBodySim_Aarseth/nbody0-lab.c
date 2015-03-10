@@ -89,33 +89,65 @@ int main(int argc, char** argv)
 
 void readParameters()
 {
-    printf("Enter numParticles, eta, timeStep, finalTime and epsilonSquared: ");
-    fscanf(inputFile, "%i", &numParticles);
-    if(numParticles > kMaxParticles)
-    {
-        fprintf(stderr, "The program currently supports up to %i particles.\n"
-                        "If you reqire more particles, please increase\n"
-                        "kMaxParticles in nbody.c and recompile.\n", kMaxParticles);
-        exit(1);
-    }
-    fscanf(inputFile, "%lf", &eta);
-    fscanf(inputFile, "%lf", &timeStep);
-    fscanf(inputFile, "%lf", &finalTime);
-    fscanf(inputFile, "%lf", &epsilonSquared);
-    printf("\n");
+	const int DBLBYTES = 8;
+	double temp;
+	
+	if(sizeof(double) != DBLBYTES){printf("WARNING: unexpected sizeof(double) == %d\n", (int)sizeof(double));}
+	printf("Initial conditions file header should be: (0)numParticles, (1)eta, (2)timeStep, (3)finalTime, (4)epsilonSquared, (5)gravityconst_G\n");
+	
+	//read numparticles
+	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){printf("Error reading initial conditions file 0\n"); exit(1);}
+	numParticles = (int)(temp);
+	if(numParticles > kMaxParticles) {
+		fprintf(stderr, "The program currently supports up to %i particles.\n"
+				"If you reqire more particles, please increase\n"
+				"kMaxParticles in nbody0-lab.c and recompile.\n", kMaxParticles);
+		exit(1);
+	}
+	
+	//read eta... not used
+	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){printf("Error reading initial conditions file 1\n"); exit(1);}
+	eta = temp;
+	
+	//read timestep
+	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){printf("Error reading initial conditions file 2\n"); exit(1);}
+	timeStep = temp;
+	
+	//read finalTime
+	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){printf("Error reading initial conditions file 3\n"); exit(1);}
+	finalTime = temp;
+	
+	//read epsilonSquared
+	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){printf("Error reading initial conditions file 4\n"); exit(1);}
+	epsilonSquared = temp;
+	
+	//read G
+	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){printf("Error reading initial conditions file 5\n"); exit(1);}
+	if(fabs(temp-1.0) > 0.000001) {
+		printf("WARNING: the Aarseth code requires that G == 1,\nso the value %lf in the initial conditions file will not be used!!\n\n", temp);
+	}
 }
 
 void readParticles()
 {
-    int i, j;
-    for(i=0; i<numParticles; i++)
-    {
-        fscanf(inputFile, "%lf", &masses[i]);
-        for(j=0; j<kNumDims; j++)
-            fscanf(inputFile, "%lf", &previousPositions[i][j]);
-        for(j=0; j<kNumDims; j++)
-            fscanf(inputFile, "%lf", &previousVelocities[i][j]);
-    }
+	const int DBLBYTES = 8;
+	double temp;
+	int i, j;
+	int readParticles = 0;
+	if(sizeof(double) != DBLBYTES) {printf("WARNING: unexpected sizeof(double) == %d\n", (int)sizeof(double));}
+	for(i=0; i<numParticles; i++) {
+		if(fread(&temp, DBLBYTES, 1, inputFile) < 1){printf("Error 6 reading initial conditions file (read %d particles before failing)\n", readParticles); exit(1);}
+		masses[i] = temp;
+		for(j=0; j<3; j++) {
+			if(fread(&temp, DBLBYTES, 1, inputFile) < 1){printf("Error 7 reading initial conditions file (read %d particles before failing)\n", readParticles); exit(1);}
+			previousPositions[i][j] = temp;
+		}
+		for(j=0; j<3; j++) {
+			if(fread(&temp, DBLBYTES, 1, inputFile) < 1){printf("Error 8 reading initial conditions file (read %d particles before failing)\n", readParticles); exit(1);}
+			previousVelocities[i][j] = temp;
+		}
+		readParticles++;
+	}
 }
 
 void initializeParticles()
@@ -233,6 +265,9 @@ void outputData()
     double f2Dot[kNumDims], velocity[kNumDims], deltaPos[kNumDims];
 
     int i,j,k;
+    size_t nCoordsWrittenWhileWriting;
+    const int FLTBYTES = 4;
+    float writeme;
 
     double dt;
 
@@ -260,10 +295,16 @@ void outputData()
         /*
         fprintf(outputFile, "%14.7g %14.7g %14.7g %14.7g\n", 
 	  masses[i], positions[i][0], positions[i][1], positions[i][2]);
-        */
         
         fprintf(outputFile, "%14.7g %14.7g %14.7g\n", 
 	  positions[i][0], positions[i][1], positions[i][2]);
+	*/
+	
+	if(sizeof(float) != FLTBYTES){printf("WARNING: unexpected sizeof(float) == %d\n",(int)sizeof(float));}
+	writeme=(float)positions[i][0];   nCoordsWrittenWhileWriting  = fwrite(&writeme, FLTBYTES, 1, outputFile);
+	writeme=(float)positions[i][1];   nCoordsWrittenWhileWriting += fwrite(&writeme, FLTBYTES, 1, outputFile);
+	writeme=(float)positions[i][2];   nCoordsWrittenWhileWriting += fwrite(&writeme, FLTBYTES, 1, outputFile);
+	if(nCoordsWrittenWhileWriting < 3){printf("Error writing to output file\n"); exit(1);}
     }
 
     /* potential energy */

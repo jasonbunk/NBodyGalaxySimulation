@@ -61,50 +61,64 @@ bool IsPowerOfTwo(unsigned int x) {
 //=====================================================================================================
 // Aarseth File I/O
 
+#define DBLBYTES 8
+#define FLTBYTES 4
+
 static void readParameters(FILE* inputFile, int* numParticlesPtr, myflt* timeStepPtr, double* finalTimePtrDbl, myflt* epsilonSquaredPtr) {
-    printf("Enter numParticles, eta, timeStep, finalTime and epsilonSquared: ");
-    fscanf(inputFile, "%i", numParticlesPtr);
-    if((*numParticlesPtr) % 2 != 0)
-    {
-        fprintf(stderr, "Error: you should use a multiple of 2 for numparticles.\n"
-                        "...perhaps even a power of 2. Entered numparticles was: %i\n", *numParticlesPtr);
-        exit(1);
-    }
-#ifdef _USE_DOUBLE_PRECISION___
-    myflt eta; fscanf(inputFile, "%lf", &eta); //not used
-    fscanf(inputFile, "%lf", timeStepPtr);
-    fscanf(inputFile, "%lf", finalTimePtrDbl);
-    fscanf(inputFile, "%lf", epsilonSquaredPtr);
-#else
-    myflt eta; fscanf(inputFile, "%f", &eta); //not used
-    fscanf(inputFile, "%f", timeStepPtr);
-    fscanf(inputFile, "%lf", finalTimePtrDbl);
-    fscanf(inputFile, "%f", epsilonSquaredPtr);
-#endif
-    printf("\n");
+	if(sizeof(double) != DBLBYTES){cout<<"WARNING: unexpected sizeof(double) == "<<sizeof(double)<<endl;}
+	double temp;
+	cout<<"Initial conditions file header should be: (0)numParticles, (1)eta, (2)timeStep, (3)finalTime, (4)epsilonSquared, (5)gravityconst_G"<<endl;
+	
+	//read numparticles
+	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 0"<<endl; exit(1);}
+	(*numParticlesPtr) = RoundDoubleToInt(temp);
+	
+	//read eta... not used
+	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 1"<<endl; exit(1);}
+	
+	//read timestep
+	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 2"<<endl; exit(1);}
+	(*timeStepPtr) = (myflt)temp;
+	
+	//read finalTime
+	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 3"<<endl; exit(1);}
+	(*finalTimePtrDbl) = temp;
+	
+	//read epsilonSquared
+	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 4"<<endl; exit(1);}
+	(*epsilonSquaredPtr) = (myflt)temp;
+	
+	//read G
+	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 5"<<endl; exit(1);}
+	NEWTONS_GRAVITATIONAL_CONSTANT = (myflt)temp;
 }
 static void readParticles(FILE* inputFile, int nparticles, std::vector<myflt4> & positionsAndMasses, std::vector<myflt4> & velocities) {
+	if(sizeof(double) != DBLBYTES){cout<<"WARNING: unexpected sizeof(double) == "<<sizeof(double)<<endl;}
+	double temp;
 	int i, j;
 	for(i=0; i<nparticles; i++)
 	{
-#ifdef _USE_DOUBLE_PRECISION___
-		fscanf(inputFile, "%lf", &(positionsAndMasses[i].s[3]));
-		for(j=0; j<3; j++)
-			fscanf(inputFile, "%lf", &(positionsAndMasses[i].s[j]));
-		for(j=0; j<3; j++)
-			fscanf(inputFile, "%lf", &(velocities[i].s[j]));
-#else
-		fscanf(inputFile, "%f", &(positionsAndMasses[i].s[3]));
-		for(j=0; j<3; j++)
-			fscanf(inputFile, "%f", &(positionsAndMasses[i].s[j]));
-		for(j=0; j<3; j++)
-			fscanf(inputFile, "%f", &(velocities[i].s[j]));
-#endif
+		if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 6 (read "<<nparticles<<" particles before failing)"<<endl; exit(1);}
+		positionsAndMasses[i].s[3] = (myflt)temp; assert(isnan(positionsAndMasses[i].s[3])==false);
+		for(j=0; j<3; j++) {
+			if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 7 (read "<<nparticles<<" particles before failing)"<<endl; exit(1);}
+			positionsAndMasses[i].s[j] = (myflt)temp; assert(isnan(positionsAndMasses[i].s[j])==false);
+		}
+		for(j=0; j<3; j++) {
+			if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 8 (read "<<nparticles<<" particles before failing)"<<endl; exit(1);}
+			velocities[i].s[j] = temp; assert(isnan(velocities[i].s[j])==false);
+		}
 	}
 }
 static void writeParticles(FILE* outputFile, int nparticles, const std::vector<myflt4> & positionsAndMasses) {
+	if(sizeof(float) != FLTBYTES){cout<<"WARNING: unexpected sizeof(float) == "<<sizeof(float)<<endl;}
+	float writeme;
+	size_t nwritten;
 	for(int i=0; i<nparticles; i++) {
-		fprintf(outputFile, "%14.7g %14.7g %14.7g\n", positionsAndMasses[i].s[0], positionsAndMasses[i].s[1], positionsAndMasses[i].s[2]);
+		writeme=(float)positionsAndMasses[i].s[0];   nwritten  = fwrite(&writeme, FLTBYTES, 1, outputFile);
+		writeme=(float)positionsAndMasses[i].s[1];   nwritten += fwrite(&writeme, FLTBYTES, 1, outputFile);
+		writeme=(float)positionsAndMasses[i].s[2];   nwritten += fwrite(&writeme, FLTBYTES, 1, outputFile);
+		if(nwritten < 3){cout<<"Error writing to output file"<<endl; exit(1);}
 	}
 }
 
@@ -122,12 +136,11 @@ int main(int argc, char* argv[])
 	
 	cl_int err;
 	if(argc < 3) {
-		cout<<"Usage:  [cpu/gpu]  [InitialConditionsFilename]  [optional:specifykernel]  [optional:gravityconstG]"<<endl;
+		cout<<"Usage:  [cpu/gpu]  [InitialConditionsFilename]  [optional:specifykernel]"<<endl;
 		exit(1);
 	}
 	std::string kernelFilename("nbody_kernel_verlet.cl");
 	if(argc >= 4) kernelFilename = std::string(argv[3]);
-	if(argc >= 5) NEWTONS_GRAVITATIONAL_CONSTANT = atof(argv[4]);
 	
 	
 #ifdef PROFILING

@@ -20,8 +20,9 @@ class PlummerGalaxy(InitialConditions):
 		self.ZeroVelocities_Bool = False
 		self.timestep = 0.1
 		self.timemax = 10.0
-		self.Aarseth_eta = 0.01
+		self.Aarseth_eta = 0.04
 		self.Aarseth_eps_sqd = 0.01
+		self.NEWTONS_GRAVITY_CONSTANT = 1.0
 	
 	
 	def GenerateInitialConditions(self, offset_x, offset_y, offset_z):
@@ -104,8 +105,7 @@ class PlummerGalaxy(InitialConditions):
 	
 	def WriteToFile(self, outfilename):
 		
-		header = str(self.npts)+"  "+str(self.Aarseth_eta)+"  "+str(self.timestep)+"  "+str(self.timemax)+"  "+str(self.Aarseth_eps_sqd)+" \n"
-		
+		header = str(self.npts)+" "+str(self.Aarseth_eta)+" "+str(self.timestep)+" "+str(self.timemax)+" "+str(self.Aarseth_eps_sqd)+" "+str(self.NEWTONS_GRAVITY_CONSTANT)+"\n"
 		self.WriteInitialConditionsToFile(outfilename, header)
 
 
