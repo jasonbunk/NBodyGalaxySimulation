@@ -50,21 +50,21 @@ if createNewInitialConditions:
 	galaxy1.nRings = 11
 	galaxy1.NEWTONS_GRAVITY_CONSTANT = GravitationalConst
 	galaxy1.GenerateInitialConditions(0,0,0, 0,0,0)
-	galaxy1.applyRotation(15.0*DEGREESTORAD, 0, 0)
+	galaxy1.applyRotation(0, -15.0*DEGREESTORAD, 0)
 	galaxy1.applyOffset(50,0,0, 0,initialVelocities,0)
 	
 	galaxy2 = ToomreDiskGalaxy()
 	galaxy2.nRings = 11
 	galaxy2.NEWTONS_GRAVITY_CONSTANT = GravitationalConst
 	galaxy2.GenerateInitialConditions(0,0,0,  0,0,0)
-	galaxy2.applyRotation(60.0*DEGREESTORAD, 0, 0)
+	galaxy2.applyRotation(0, 60.0*DEGREESTORAD, 0)
 	galaxy2.applyOffset(-50,0,0, 0,-1.0*initialVelocities,0)
 	
 	TotalNumPts = (galaxy1.npts + galaxy2.npts)
 	
-	timeStep = 0.07
-	timeMax = 21.0
-	epssqd = 0.01
+	timeStep = 0.06
+	timeMax = 22.485
+	epssqd = 0.001
 	
 	bothGalaxies = InitialConditions()
 	bothGalaxies.extend(galaxy1)
