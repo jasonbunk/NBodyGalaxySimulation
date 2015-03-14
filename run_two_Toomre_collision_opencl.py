@@ -74,7 +74,7 @@ if createNewInitialConditions:
 	bothGalaxies = InitialConditions()
 	bothGalaxies.extend(galaxy1)
 	bothGalaxies.extend(galaxy2)
-	AarsethHeader = str(TotalNumPts)+" 0.0 "+str(timeStep)+" "+str(timeMax)+" "+str(epssqd)+"\n"
+	AarsethHeader = str(TotalNumPts)+" 0.01 "+str(timeStep)+" "+str(timeMax)+" "+str(epssqd)+" "+str(GravitationalConst)+"\n"
 	bothGalaxies.WriteInitialConditionsToFile("two_toomres_collision.data", AarsethHeader)
 	
 	print("Running compiled OpenCL C++ nbody code (on "+DEVICE_CPU_OR_GPU+") on initial conditions file")
