@@ -62,7 +62,7 @@ __kernel void nbody_kern_func_main(
 		barrier(CLK_LOCAL_MEM_FENCE);    /* Wait for others in the work-group */
 		if((jb*nt+ti) < nrealparts) {
 			for(int j=0; j<nt; j++) {        /* For ALL cached particle positions... */
-				if((jb*nt+j)<nrealparts) {
+				if((jb*nt+j)<nrealparts && (jb*nt+j) != gti) {
 					myflt4 p2 = pblock[j];      /* Read a cached particle position */
 					myflt4 d = p2 - p;
 					myflt invr = rsqrt(d.x*d.x + d.y*d.y + d.z*d.z + epssqd);
