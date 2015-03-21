@@ -227,7 +227,7 @@ int main(int argc, char** argv)
 		accelSaved.zero();
 		for(int j=0; j<nparticles; j++) {
 			if(i != j) {
-				posdiff = positionsBB[j] - positionsBB[i];
+				posdiff = positionsAA[j] - positionsAA[i];
 				temp = posdiff.length();
 				accelSaved += ((posdiff*NEWTONS_GRAVITY_CONSTANT*masses[j]) / (temp*temp*temp + epssqd));
 			}
