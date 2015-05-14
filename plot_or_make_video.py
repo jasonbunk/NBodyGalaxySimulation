@@ -40,10 +40,10 @@ def MakeVideo(npts, datafilename, videoOutFilename, boolTrueIfPositionsVideo_Fal
 		ax.set_aspect(1)
 		ax.set_xlabel('x (kpc)')
 		ax.set_ylabel('y (kpc)')
-		plt.savefig("frames/_aoutlineframe.png")
+		plt.savefig("data/videoframes/_aoutlineframe.png")
 		plt.clf()
 		plt.close()
-		os.system("convert frames/_aoutlineframe.png -negate frames/_aoutlineframe.png")
+		os.system("convert data/videoframes/_aoutlineframe.png -negate data/videoframes/_aoutlineframe.png")
 	
 	partnum = 0
 	timestepint = 0
@@ -85,14 +85,14 @@ def MakeVideo(npts, datafilename, videoOutFilename, boolTrueIfPositionsVideo_Fal
 					ax.set_xlabel('x (kpc)')
 					ax.set_ylabel('y (kpc)')
 				
-				fname = "frames/_tmp%03d.png"%timestepint
+				fname = "data/videoframes/_tmp%03d.png"%timestepint
 				plt.savefig(fname)
 				plt.clf()
 				plt.close()
 				
 				if UseImageMagickForFancierPositionsVideo:
 					os.system("convert "+fname+" -negate -gaussian-blur 7x2 -contrast "+fname)
-					os.system("composite -compose plus "+fname+" frames/_aoutlineframe.png "+fname)
+					os.system("composite -compose plus "+fname+" data/videoframes/_aoutlineframe.png "+fname)
 			
 			else:
 				radiiForPlotting = np.sqrt(np.power(ptsx,2.0) + np.power(ptsy,2.0) + np.power(ptsz,2.0))
@@ -108,7 +108,7 @@ def MakeVideo(npts, datafilename, videoOutFilename, boolTrueIfPositionsVideo_Fal
 				ax.set_xlabel('r (kpc)')
 				ax.set_ylabel('radial mass density: p(r) * 4 pi r^2   units: 10^11 Msol/kpc')
 				ax.set_title("time: "+str(timestepint))
-				fname = "frames/_tmp%03d.png"%timestepint
+				fname = "data/videoframes/_tmp%03d.png"%timestepint
 				plt.savefig(fname)
 				plt.clf()
 				plt.close()
@@ -121,7 +121,7 @@ def MakeVideo(npts, datafilename, videoOutFilename, boolTrueIfPositionsVideo_Fal
 	fin.close()
 	
 	print("Making movie "+str(videoOutFilename)+"video.avi - this make take a while")
-	os.system("ffmpeg -r 30 -f image2 -i 'frames/_tmp%03d.png' -qscale 0 '"+str(videoOutFilename)+"'")
-	######os.system("rm frames/*.png")
+	os.system("ffmpeg -r 30 -f image2 -i 'data/videoframes/_tmp%03d.png' -qscale 0 '"+str(videoOutFilename)+"'")
+	######os.system("rm data/videoframes/*.png")
 
 

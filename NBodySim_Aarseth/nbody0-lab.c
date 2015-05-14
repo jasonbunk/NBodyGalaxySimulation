@@ -51,10 +51,11 @@ int main(int argc, char** argv)
     char fileToOpen[1024];
     char fileToSaveTo[1024];
     memset(fileToOpen,0,1024);
-    if(argc > 1) {
+    if(argc > 2) {
         strcpy(fileToOpen, argv[1]);
+        strcpy(fileToSaveTo, argv[2]);
     } else {
-        printf("args:  {initial-conditions-file}\n");
+        printf("args:  {initial-conditions-file}  {output-file}\n");
         return 1;
     }
     
@@ -70,8 +71,11 @@ int main(int argc, char** argv)
     readParameters();
     readParticles();
     
-    sprintf(fileToSaveTo, "out_aarseth_npts_%d.data", numParticles);
     outputFile = fopen(fileToSaveTo, "w");
+    if(!outputFile) {
+        printf("Error: unable to create output file: \"%s\"\n",fileToSaveTo);
+        return 1;
+    }
     NPARTICLESWRITEME = (int64_t)numParticles;
     fwrite(&NPARTICLESWRITEME, 8, 1, outputFile);
     NPARTICLESWRITEME = 0;

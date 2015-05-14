@@ -16,6 +16,9 @@ except ImportError:
 
 # Settings:
 
+InitialConditionsFolder = "data/initialconditions/"
+OutputResultsFolder = "data/results/"
+
 GravitationalConst = 1.0
 
 TotalNumPts = 8192
@@ -51,10 +54,10 @@ if createNewInitialConditions:
 	bothGalaxies.extend(galaxy1)
 	bothGalaxies.extend(galaxy2)
 	AarsethHeader = str(TotalNumPts)+" 0.01 "+str(timeStep)+" "+str(timeMax)+" "+str(epssqd)+" "+str(GravitationalConst)+"\n"
-	bothGalaxies.WriteInitialConditionsToFile("two_plummers_collision.data", AarsethHeader)
+	bothGalaxies.WriteInitialConditionsToFile(InitialConditionsFolder+"two_plummers_collision.data", AarsethHeader)
 	
 	print("Running compiled OpenCL C++ nbody code (on GPU) on Plummer initial conditions file")
-	os.system("./NBodySim_OpenCL_N2/nbodyocl gpu two_plummers_collision.data NBodySim_OpenCL_N2/nbody_kernel_verlet.cl "+str(GravitationalConst))
+	os.system("./NBodySim_OpenCL_N2/nbodyocl gpu "+InitialConditionsFolder+"two_plummers_collision.data "+OutputResultsFolder+"out_opencl.data NBodySim_OpenCL_N2/nbody_kernel_verlet.cl")
 	
 
 
@@ -63,7 +66,7 @@ if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
 	print("beginning to make plots/video...")
 	
 	if MakePositionsVideo:
-		MakeVideo(TotalNumPts, "out_opencl.data", "video_two_plummer_collision.avi", True, 8, UseImageMagickForFancierVideo)
+		MakeVideo(TotalNumPts, OutputResultsFolder+"out_opencl.data", "video_two_plummer_collision.avi", True, 8, UseImageMagickForFancierVideo)
 
 
 

@@ -24,6 +24,9 @@ DEGREESTORAD = 0.01745329251994329577
 
 # Settings:
 
+InitialConditionsFolder = "data/initialconditions/"
+OutputResultsFolder = "data/results/"
+
 GravitationalConst = 4.498309551e-8
 
 TotalNumPts = (298*2) #596
@@ -70,14 +73,14 @@ if createNewInitialConditions:
 	bothGalaxies.extend(galaxy1)
 	bothGalaxies.extend(galaxy2)
 	AarsethHeader = str(TotalNumPts)+" 0.01 "+str(timeStep)+" "+str(timeMax)+" "+str(epssqd)+" "+str(GravitationalConst)+"\n"
-	bothGalaxies.WriteInitialConditionsToFile("two_toomres_collision.data", AarsethHeader)
+	bothGalaxies.WriteInitialConditionsToFile(InitialConditionsFolder+"two_toomres_collision.data", AarsethHeader)
 	
 	print("Running compiled SimpleCPU NBody C++ code on initial conditions file")
-	os.system("./NBodySim_SimpleCPU/nbodycpp two_toomres_collision.data "+str(GravitationalConst))
+	os.system("./NBodySim_SimpleCPU/nbodycpp "+InitialConditionsFolder+"two_toomres_collision.data "+OutputResultsFolder+"out_simplecpu.data")
 	
 	if doRender3D:
 		print("launching renderer...")
-		os.system("Renderer3D/Renderer3D out_simplecpu.data "+str(TotalNumPts)+" 0 1 1 Renderer3D/cposfile.txt 1")
+		os.system("Renderer3D/Renderer3D "+OutputResultsFolder+"out_simplecpu.data "+str(TotalNumPts)+" 0 1 1 Renderer3D/cposfile.txt 1")
 
 
 if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
@@ -85,9 +88,9 @@ if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
 	print("beginning to make plots/video...")
 	
 	if MakePositionsVideo:
-		MakeVideo(TotalNumPts, "out_opencl.data", "video_twotoomre_collision.avi", True, 75, False, 200)
+		MakeVideo(TotalNumPts, OutputResultsFolder+"out_opencl.data", "video_twotoomre_collision.avi", True, 75, False, 200)
 	if MakeDistributionsVideo:
-		MakeVideo(TotalNumPts, "out_opencl.data", "video_twotoomre_collision_distributions.avi", False, 75)
+		MakeVideo(TotalNumPts, OutputResultsFolder+"out_opencl.data", "video_twotoomre_collision_distributions.avi", False, 75)
 
 
 

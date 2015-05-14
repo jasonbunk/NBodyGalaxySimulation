@@ -1,6 +1,3 @@
-#ignore video frames generated
-frames/*.png
-
 #ignore compiled Aarseth code
 aarseth
 #ignore compiled OpenCL nbody code

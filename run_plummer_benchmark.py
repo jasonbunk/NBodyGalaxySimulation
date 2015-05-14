@@ -18,30 +18,38 @@ if galaxyNumPts <= 0:
 	quit()
 
 
+InitialConditionsFolder = "data/initialconditions/"
+OutputResultsFolder = "data/results/"
+
 # ==================== Argument 2: nbody code type
 
+OUTFILENAME = ""
 NBODYCOMPILER = ""
 NBODYCALCULATOR = ""
 
 if str(sys.argv[2]) == "aarseth":
 	print("python script was told to use aarseth code (nbody0-lab.c)")
+	OUTFILENAME = OutputResultsFolder+"out_aarseth_plumbench.data"
 	NBODYCOMPILER = "(cd NBodySim_Aarseth && make)"
-	NBODYCALCULATOR = "./NBodySim_Aarseth/aarseth initialconditions.data"
+	NBODYCALCULATOR = "./NBodySim_Aarseth/aarseth "+InitialConditionsFolder+"initialconditions.data "+OUTFILENAME
 
 elif str(sys.argv[2]) == "simplecpu":
 	print("python script was told to use simplecpu code (single-threaded C++)")
+	OUTFILENAME = OutputResultsFolder+"out_simplecpu_plumbench.data"
 	NBODYCOMPILER = "(cd NBodySim_SimpleCPU && make)"
-	NBODYCALCULATOR = "./NBodySim_SimpleCPU/nbodycpp initialconditions.data"
+	NBODYCALCULATOR = "./NBodySim_SimpleCPU/nbodycpp "+InitialConditionsFolder+"initialconditions.data "+OUTFILENAME
 
 elif str(sys.argv[2]) == "opencl-cpu":
 	print("python script was told to use opencl code (cpu)")
+	OUTFILENAME = OutputResultsFolder+"out_opencl_cpu_plumbench.data"
 	NBODYCOMPILER = "(cd NBodySim_OpenCL_N2 && make)"
-	NBODYCALCULATOR = "./NBodySim_OpenCL_N2/nbodyocl cpu initialconditions.data NBodySim_OpenCL_N2/nbody_kernel_verlet.cl"
+	NBODYCALCULATOR = "./NBodySim_OpenCL_N2/nbodyocl cpu "+InitialConditionsFolder+"initialconditions.data "+OUTFILENAME+" NBodySim_OpenCL_N2/nbody_kernel_verlet.cl"
 
 elif str(sys.argv[2]) == "opencl-gpu":
 	print("python script was told to use opencl code (gpu)")
+	OUTFILENAME = OutputResultsFolder+"out_opencl_gpu_plumbench.data"
 	NBODYCOMPILER = "(cd NBodySim_OpenCL_N2 && make)"
-	NBODYCALCULATOR = "./NBodySim_OpenCL_N2/nbodyocl gpu initialconditions.data NBodySim_OpenCL_N2/nbody_kernel_verlet.cl"
+	NBODYCALCULATOR = "./NBodySim_OpenCL_N2/nbodyocl gpu "+InitialConditionsFolder+"initialconditions.data "+OUTFILENAME+" NBodySim_OpenCL_N2/nbody_kernel_verlet.cl"
 
 else:
 	print("unknown nbody code type, see arguments")
@@ -74,7 +82,7 @@ newGalaxy.timestep = 0.1
 newGalaxy.timemax = 10.0
 newGalaxy.ZeroVelocities_Bool = False
 newGalaxy.GenerateInitialConditions(0,0,0)
-newGalaxy.WriteToFile("initialconditions.data")
+newGalaxy.WriteToFile(InitialConditionsFolder+"initialconditions.data")
 
 
 # ==================== simulate
@@ -87,8 +95,11 @@ if len(NBODYCALCULATOR) > 1:
 # ==================== render
 
 if doRender3D:
-	import glob
-	latestDatafile = max(glob.iglob('*.data'), key=os.path.getctime)
+	if False:
+		import glob
+		latestDatafile = max(glob.iglob(OutputResultsFolder+"*.data"), key=os.path.getctime)
+	else:
+		latestDatafile = OUTFILENAME
 	print("will render file: \""+str(latestDatafile)+"\"")
 	os.system("./Renderer3D/Renderer3D "+str(latestDatafile)+" "+str(galaxyNumPts)+" 0 1 1")
 

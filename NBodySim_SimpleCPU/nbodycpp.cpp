@@ -188,10 +188,11 @@ int main(int argc, char** argv)
 	char fileToOpen[1024];
 	char fileToSaveTo[1024];
 	memset(fileToOpen,0,1024);
-	if(argc >= 2) {
+	if(argc > 2) {
 		strcpy(fileToOpen, argv[1]);
+		strcpy(fileToSaveTo, argv[2]);
 	} else {
-		cout<<"Usage:  [InitialConditionsFilename]"<<endl;
+		cout<<"Usage:  {InitialConditionsFilename}  {OutputFilename}"<<endl;
 		return 1;
 	}
 	FILE * inputFile = fopen(fileToOpen, "r");
@@ -238,7 +239,6 @@ int main(int argc, char** argv)
 	
 	
 	//create output file
-	sprintf(fileToSaveTo, "out_simplecpu.data");
 	FILE * outputFile = fopen(fileToSaveTo, "w");
 	if(!outputFile) {
 		cout<<"Error: unable to open output file for saving output: \""<<fileToSaveTo<<"\""<<endl;

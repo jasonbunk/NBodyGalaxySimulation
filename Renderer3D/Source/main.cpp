@@ -367,7 +367,7 @@ int main(int argc, char** argv)
 			//sfml_window->PreserveOpenGLStates(true);
 			sf::Image renderedImg = sfml_window->capture();
 			char filenameout[1024];
-			sprintf(filenameout, "frames/__%05d.png", gGameSystem.physics_system->GetNumFramesDraw());
+			sprintf(filenameout, "data/videoframes/__%05d.png", gGameSystem.physics_system->GetNumFramesDraw());
 			renderedImg.saveToFile(filenameout);
 		}
 	}

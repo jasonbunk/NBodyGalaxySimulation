@@ -15,6 +15,9 @@ except ImportError:
 
 # Settings:
 
+InitialConditionsFolder = "data/initialconditions/"
+OutputResultsFolder = "data/results/"
+
 GravitationalConst = 1.0
 
 TotalNumPts = 6000
@@ -50,13 +53,13 @@ if createNewInitialConditions:
 	bothGalaxies.extend(galaxy2)
 	AarsethHeader = str(TotalNumPts)+"  0.05  0.15  30.0  0.10\n"
 	AarsethHeader = str(TotalNumPts)+" 0.01 "+str(timeStep)+" "+str(timeMax)+" "+str(epssqd)+" "+str(GravitationalConst)+"\n"
-	bothGalaxies.WriteInitialConditionsToFile("two_plummers_collision.data", AarsethHeader)
+	bothGalaxies.WriteInitialConditionsToFile(InitialConditionsFolder+"two_plummers_collision.data", AarsethHeader)
 	
 	print("compiling Aarseth c code...")
 	os.system("(cd Aarseth && make)")
 	
 	print("Running compiled Aarseth nbody code on Plummer initial conditions file")
-	os.system("./Aarseth/aarseth two_plummers_collision.data")
+	os.system("./Aarseth/aarseth "+InitialConditionsFolder+"two_plummers_collision.data "+OutputResultsFolder+"out_aarseth_npts_"+str(TotalNumPts)+".data")
 
 
 if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
@@ -64,9 +67,9 @@ if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
 	print("beginning to make plots/video...")
 	
 	if MakePositionsVideo:
-		MakeVideo(galaxyNumPts, "out_aarseth_npts_"+str(TotalNumPts)+".data", "video_two_plummer_collision.avi", True)
+		MakeVideo(galaxyNumPts, OutputResultsFolder+"out_aarseth_npts_"+str(TotalNumPts)+".data", "video_two_plummer_collision.avi", True)
 	if MakeDistributionsVideo:
-		MakeVideo(galaxyNumPts, "out_aarseth_npts_"+str(TotalNumPts)+".data", "video_two_plummer_collision_distributions.avi", False)
+		MakeVideo(galaxyNumPts, OutputResultsFolder+"out_aarseth_npts_"+str(TotalNumPts)+".data", "video_two_plummer_collision_distributions.avi", False)
 
 
 

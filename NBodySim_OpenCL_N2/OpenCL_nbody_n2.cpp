@@ -135,12 +135,12 @@ int main(int argc, char* argv[])
 #endif
 	
 	cl_int err;
-	if(argc < 3) {
-		cout<<"Usage:  [cpu/gpu]  [InitialConditionsFilename]  [optional:specifykernel]"<<endl;
+	if(argc < 4) {
+		cout<<"Usage:  {cpu/gpu}  {InitialConditionsFilename}  {OutputFilename}  {optional:specifykernel}"<<endl;
 		exit(1);
 	}
 	std::string kernelFilename("nbody_kernel_verlet.cl");
-	if(argc >= 4) kernelFilename = std::string(argv[3]);
+	if(argc > 4) kernelFilename = std::string(argv[4]);
 	
 	
 #ifdef PROFILING
@@ -164,7 +164,7 @@ int main(int argc, char* argv[])
 	myflt dt;
 	myflt epssqd;
 	
-	std::string outputFileName("out_opencl.data"); //used later
+	std::string outputFileName(argv[3]); //used later
 	
 	//------------------------------------------------------------
 	
