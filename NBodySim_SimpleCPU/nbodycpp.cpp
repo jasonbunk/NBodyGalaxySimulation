@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <math.h>
 #include <assert.h>
 #include <iostream>
@@ -235,10 +236,23 @@ int main(int argc, char** argv)
 		positionsBB[i] = positionsAA[i] + velocities[i]*dt + accelSaved*0.5*dt*dt;
 	}
 	
+	
+	//create output file
 	sprintf(fileToSaveTo, "out_simplecpu.data");
 	FILE * outputFile = fopen(fileToSaveTo, "w");
+	if(!outputFile) {
+		cout<<"Error: unable to open output file for saving output: \""<<fileToSaveTo<<"\""<<endl;
+		return 1;
+	}
+	//write output header: first 8 bytes are number of particles; next 8 bytes are currently unused
+	int64_t NPARTICLESWRITEME = (int64_t)nparticles;
+	fwrite(&NPARTICLESWRITEME, 8, 1, outputFile);
+	NPARTICLESWRITEME = 0;
+	fwrite(&NPARTICLESWRITEME, 8, 1, outputFile);
+	//write the first two timesteps
 	writeParticles(outputFile, positionsAA);
 	writeParticles(outputFile, positionsBB);
+	
 	
 	for(int step=0; step<nsteps; step+=nburst) {
 		for(int burst=0; burst<nburst; burst+=3) {

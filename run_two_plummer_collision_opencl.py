@@ -44,13 +44,13 @@ if createNewInitialConditions:
 	galaxy2.GenerateInitialConditions(4, 4, 0)
 	
 	timeStep = 0.15
-	timeMax = 150.0
-	epssqd = 0.05
+	timeMax = 30.0
+	epssqd = 0.1
 	
 	bothGalaxies = InitialConditions()
 	bothGalaxies.extend(galaxy1)
 	bothGalaxies.extend(galaxy2)
-	AarsethHeader = str(TotalNumPts)+" 0.0 "+str(timeStep)+" "+str(timeMax)+" "+str(epssqd)+"\n"
+	AarsethHeader = str(TotalNumPts)+" 0.01 "+str(timeStep)+" "+str(timeMax)+" "+str(epssqd)+" "+str(GravitationalConst)+"\n"
 	bothGalaxies.WriteInitialConditionsToFile("two_plummers_collision.data", AarsethHeader)
 	
 	print("Running compiled OpenCL C++ nbody code (on GPU) on Plummer initial conditions file")

@@ -3,15 +3,31 @@
 
 //#define __NO_STD_VECTOR // Use std::vector instead of STL version
 
+
+
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
-#include "HeaderCL12ForAppleMavericks/cl.hpp"
-#elif defined __ANDROID_MALI_OPENCL_
+#endif
+
+
+
+// include C++ OpenCL header
+
+#ifdef __ANDROID_MALI_OPENCL_
 #pragma warning "compiling for android!!! 222222222222222222"
 #include "HeaderCL11forAndroid/cl.hpp"
+
+#elif defined USE_HEADER_CL12_FOR_CPP
+#include "HeaderCL12ForCPP/cl.hpp"
+
 #else
 #include <CL/cl.hpp>
+
 #endif
+
+
+
+
 
 
 #endif

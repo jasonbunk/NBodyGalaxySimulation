@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import imp
+import struct
 try:
   imp.find_module('matplotlib')
   matplotlibAvailable = True
@@ -20,7 +21,11 @@ def MakeVideo(npts, datafilename, videoOutFilename, boolTrueIfPositionsVideo_Fal
 	#=================================================================================
 	# Plot the results using matplotlib
 	
-	fin = open(datafilename, "r")
+	fin = open(datafilename, 'rb')
+	FLOATSIZE = 4
+	FLOATTYPE = 'f'
+        nparticles = int(struct.unpack('q',fin.read(8))[0])  # read int64_t type
+        secondheadernum = int(struct.unpack('q',fin.read(8))[0])  # read int64_t type
 	
 	ptsx = np.zeros(npts)
 	ptsy = np.zeros(npts)
@@ -42,10 +47,18 @@ def MakeVideo(npts, datafilename, videoOutFilename, boolTrueIfPositionsVideo_Fal
 	
 	partnum = 0
 	timestepint = 0
-	for line in fin:   # iterate over each line
-	
-		ptsx[partnum], ptsy[partnum], ptsz[partnum] = line.split()   # split line by whitespace
+	keepiterating = True
+	while keepiterating: #keep iterating until end of file
 		
+		try:
+			ptsx[partnum] = float(struct.unpack(FLOATTYPE,fin.read(FLOATSIZE))[0])
+			ptsy[partnum] = float(struct.unpack(FLOATTYPE,fin.read(FLOATSIZE))[0])
+			ptsz[partnum] = float(struct.unpack(FLOATTYPE,fin.read(FLOATSIZE))[0])
+		except struct.error:
+			print("done reading file")
+			keepiterating = False
+		
+		#####ptsx[partnum], ptsy[partnum], ptsz[partnum] = line.split()   # split line by whitespace
 		#print("pt_"+str(partnum)+" == ("+str(ptsx[partnum])+", "+str(ptsy[partnum])+", "+str(ptsz[partnum])+")")
 		
 		if partnum >= (npts-1):
@@ -109,6 +122,6 @@ def MakeVideo(npts, datafilename, videoOutFilename, boolTrueIfPositionsVideo_Fal
 	
 	print("Making movie "+str(videoOutFilename)+"video.avi - this make take a while")
 	os.system("ffmpeg -r 30 -f image2 -i 'frames/_tmp%03d.png' -qscale 0 '"+str(videoOutFilename)+"'")
-	os.system("rm frames/*.png")
+	######os.system("rm frames/*.png")
 
 

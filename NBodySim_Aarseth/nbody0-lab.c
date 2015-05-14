@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <stdint.h>
 
 #define dot(a,b) ((a[0])*(b[0]) + (a[1])*(b[1]) + (a[2])*(b[2]))
 #define lengthSquared(a) dot(a,a)
@@ -46,13 +47,15 @@ FILE * outputFile;
 
 int main(int argc, char** argv)
 {
+    int64_t NPARTICLESWRITEME;
     char fileToOpen[1024];
     char fileToSaveTo[1024];
     memset(fileToOpen,0,1024);
     if(argc > 1) {
         strcpy(fileToOpen, argv[1]);
     } else {
-        strcpy(fileToOpen, "initc.data");
+        printf("args:  {initial-conditions-file}\n");
+        return 1;
     }
     
     /* the input file can either be a file or the standard input */
@@ -69,8 +72,13 @@ int main(int argc, char** argv)
     
     sprintf(fileToSaveTo, "out_aarseth_npts_%d.data", numParticles);
     outputFile = fopen(fileToSaveTo, "w");
+    NPARTICLESWRITEME = (int64_t)numParticles;
+    fwrite(&NPARTICLESWRITEME, 8, 1, outputFile);
+    NPARTICLESWRITEME = 0;
+    fwrite(&NPARTICLESWRITEME, 8, 1, outputFile);
+    
     initializeParticles();
-
+    
     while(1)
     {
         outputData();

@@ -15,6 +15,8 @@ except ImportError:
 
 # Settings:
 
+GravitationalConst = 1.0
+
 TotalNumPts = 6000
 
 createNewInitialConditions = True
@@ -39,10 +41,15 @@ if createNewInitialConditions:
 	galaxy2.ZeroVelocities_Bool = False
 	galaxy2.GenerateInitialConditions(2.5, 2.5, 0)
 	
+	timeStep = 0.15
+	timeMax = 30.0
+	epssqd = 0.1
+	
 	bothGalaxies = InitialConditions()
 	bothGalaxies.extend(galaxy1)
 	bothGalaxies.extend(galaxy2)
 	AarsethHeader = str(TotalNumPts)+"  0.05  0.15  30.0  0.10\n"
+	AarsethHeader = str(TotalNumPts)+" 0.01 "+str(timeStep)+" "+str(timeMax)+" "+str(epssqd)+" "+str(GravitationalConst)+"\n"
 	bothGalaxies.WriteInitialConditionsToFile("two_plummers_collision.data", AarsethHeader)
 	
 	print("compiling Aarseth c code...")

@@ -230,14 +230,21 @@ int main(int argc, char* argv[])
 		positionsOneStepBackForVerlet[j].s[2] = ((myflt)i)*((myflt)0.1);
 	}
 	
-	//save initial conditions as first frame of output
+	//create output file
 	FILE * outputFile = fopen(outputFileName.c_str(), "w");
 	if(!outputFile) {
 		cout<<"Error: unable to open output file for saving output: \""<<outputFileName<<"\""<<endl;
 		return 1;
 	}
+	//write output header: first 8 bytes are number of particles; next 8 bytes are currently unused
+	int64_t NPARTICLESWRITEME = (int64_t)nparticles;
+	fwrite(&NPARTICLESWRITEME, 8, 1, outputFile);
+	NPARTICLESWRITEME = 0;
+	fwrite(&NPARTICLESWRITEME, 8, 1, outputFile);
+	//write the first two timesteps
 	writeParticles(outputFile, nparticles, positionsOneStepBackForVerlet);
 	writeParticles(outputFile, nparticles, positions_host);
+	
 	//------------------------------------------------------------
 	
 	cout<<"allocating video memory..."<<endl;
