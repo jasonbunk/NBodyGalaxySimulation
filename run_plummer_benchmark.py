@@ -1,10 +1,9 @@
-import os
-import sys
+import os, sys, time
 from PlummerGalaxy import PlummerGalaxy
 
 
 def printargs():
-	print("arguments:   {numpts}   {nbody: aarseth|simplecpu|opencl-cpu|opencl-gpu}   {optional:render?}")
+	print("arguments:   {numpts}   {nbody: aarseth|simplecpu|opencl-cpu|opencl-gpu}   {optional:render?}   {optional:opencl-particles-per-thread}")
 
 if len(sys.argv) <= 2:
 	printargs()
@@ -17,6 +16,9 @@ if galaxyNumPts <= 0:
 	printargs()
 	quit()
 
+particlesPerOpenCLThread = 0
+if len(sys.argv) > 4:
+	particlesPerOpenCLThread = str(sys.argv[4])
 
 InitialConditionsFolder = "data/initialconditions/"
 OutputResultsFolder = "data/results/"
@@ -43,13 +45,13 @@ elif str(sys.argv[2]) == "opencl-cpu":
 	print("python script was told to use opencl code (cpu)")
 	OUTFILENAME = OutputResultsFolder+"out_opencl_cpu_plumbench.data"
 	NBODYCOMPILER = "(cd NBodySim_OpenCL_N2 && make)"
-	NBODYCALCULATOR = "./NBodySim_OpenCL_N2/nbodyocl cpu "+InitialConditionsFolder+"initialconditions.data "+OUTFILENAME+" NBodySim_OpenCL_N2/nbody_kernel_verlet.cl"
+	NBODYCALCULATOR = "./NBodySim_OpenCL_N2/nbodyocl cpu "+InitialConditionsFolder+"initialconditions.data "+OUTFILENAME+" "+particlesPerOpenCLThread+" NBodySim_OpenCL_N2/nbody_kernel_verlet.cl"
 
 elif str(sys.argv[2]) == "opencl-gpu":
 	print("python script was told to use opencl code (gpu)")
 	OUTFILENAME = OutputResultsFolder+"out_opencl_gpu_plumbench.data"
 	NBODYCOMPILER = "(cd NBodySim_OpenCL_N2 && make)"
-	NBODYCALCULATOR = "./NBodySim_OpenCL_N2/nbodyocl gpu "+InitialConditionsFolder+"initialconditions.data "+OUTFILENAME+" NBodySim_OpenCL_N2/nbody_kernel_verlet.cl"
+	NBODYCALCULATOR = "./NBodySim_OpenCL_N2/nbodyocl gpu "+InitialConditionsFolder+"initialconditions.data "+OUTFILENAME+" "+particlesPerOpenCLThread+" NBodySim_OpenCL_N2/nbody_kernel_verlet.cl"
 
 else:
 	print("unknown nbody code type, see arguments")
@@ -89,7 +91,10 @@ newGalaxy.WriteToFile(InitialConditionsFolder+"initialconditions.data")
 
 if len(NBODYCALCULATOR) > 1:
 	print("Running nbody simulation...")
+	starttime = time.time() #time.clock()
 	os.system(NBODYCALCULATOR)
+	endtime = time.time() #time.clock()
+	print("TIME TO RUN BENCHMARK: "+str(endtime-starttime)+" seconds")
 
 
 # ==================== render

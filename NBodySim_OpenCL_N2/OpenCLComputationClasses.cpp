@@ -117,7 +117,7 @@ void OpenCLContextAndDevices::Init(std::string deviceType, bool profiling /*=fal
 // Load and build kernel
 //=============================================================================================================
 
-void OpenCLKernelComputationClass::LoadKernel(std::string kernelFilename, std::string kernelFunctionName)
+void OpenCLKernelComputationClass::LoadKernel(std::string kernelFilename, std::string kernelFunctionName, std::string kernelpreprocessordefs)
 {
 	if(myKernel != nullptr) {
 		cout << "OpenCLKernelComputationClass::LoadKernel() -- already loaded"<<endl;
@@ -131,9 +131,15 @@ void OpenCLKernelComputationClass::LoadKernel(std::string kernelFilename, std::s
 	//Open and load the OpenCL compute program
 	std::ifstream file(kernelFilename.c_str());
 	CheckCLErr(file.is_open() ? CL_SUCCESS:-1, kernelFilename);
-	std::string prog(std::istreambuf_iterator<char>(file), (std::istreambuf_iterator<char>()));
-	cl::Program::Sources source(1, std::make_pair(prog.c_str(), prog.length()+1));
+	std::string fullprog(std::istreambuf_iterator<char>(file), (std::istreambuf_iterator<char>()));
+	
+	//apply preprocessor directives to kernel
+	fullprog = (kernelpreprocessordefs + fullprog);
+	
+	//load
+	cl::Program::Sources source(1, std::make_pair(fullprog.c_str(), fullprog.length()+1));
 	cl::Program program(myParentContextAndDevices.GetContext(), source);
+	
 	
 	//---------------------------------------------
 	// Build (compile) it for the device(s)
@@ -150,6 +156,7 @@ void OpenCLKernelComputationClass::LoadKernel(std::string kernelFilename, std::s
 	
 	myKernel = new cl::Kernel(program, kernelFunctionName.c_str(), &err);
 	CheckCLErr(err, "Kernel::Kernel()");
+	
 	
 	//---------------------------------------------
 	// Get the maximum work group size for executing the kernel on the device

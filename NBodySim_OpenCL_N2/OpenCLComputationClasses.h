@@ -80,7 +80,7 @@ public:
 	
 	//	LoadKernel()
 	//	call this first
-	void LoadKernel(std::string kernelFilename, std::string kernelFunctionName);
+	void LoadKernel(std::string kernelFilename, std::string kernelFunctionName, std::string kernelpreprocessordefs);
 	
 	
 	//	CreateBufForKernel(kernelArgNum, bufSize, bufmemflags)

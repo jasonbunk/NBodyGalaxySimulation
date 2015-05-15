@@ -27,6 +27,7 @@
 #include <iterator>
 #include <stdint.h>
 #include <math.h>
+#include <sstream>
 #include "OpenCLComputationClasses.h"
 using std::cout; using std::endl;
 
@@ -56,6 +57,14 @@ int RoundDoubleToInt(double x) {
 
 bool IsPowerOfTwo(unsigned int x) {
     return (x & (x - 1)) == 0;
+}
+
+template <class T>
+inline std::string to_sstring(const T& t)
+{
+    std::stringstream ss;
+    ss << (t);
+    return ss.str();
 }
 
 //=====================================================================================================
@@ -135,12 +144,12 @@ int main(int argc, char* argv[])
 #endif
 	
 	cl_int err;
-	if(argc < 4) {
-		cout<<"Usage:  {cpu/gpu}  {InitialConditionsFilename}  {OutputFilename}  {optional:specifykernel}"<<endl;
+	if(argc < 5) {
+		cout<<"Usage:  {cpu/gpu}  {InitialConditionsFilename}  {OutputFilename}  {particles-per-thread}  {optional:specifykernel}"<<endl;
 		exit(1);
 	}
 	std::string kernelFilename("nbody_kernel_verlet.cl");
-	if(argc > 4) kernelFilename = std::string(argv[4]);
+	if(argc > 5) kernelFilename = std::string(argv[5]);
 	
 	
 #ifdef PROFILING
@@ -149,8 +158,16 @@ int main(int argc, char* argv[])
 	OpenCLContextAndDevices ctxtAndDevcs(argv[1], false);
 #endif
 	
+	const int npartsperthread = atoi(argv[4]);
+	
+	std::string kernelpreprocessor("#define MYDEF_NUM_PARTICLES_PER_THREAD ");
+	kernelpreprocessor += to_sstring(npartsperthread) + std::string("\n");
+#ifdef _USE_DOUBLE_PRECISION___
+	kernelpreprocessor += std::string("#define _USE_DOUBLE_PRECISION___ 1\n");
+#endif
+	
 	OpenCLKernelComputationClass kernelClass(ctxtAndDevcs);
-	kernelClass.LoadKernel(kernelFilename, "nbody_kern_func_main");
+	kernelClass.LoadKernel(kernelFilename, "nbody_kern_func_main", kernelpreprocessor);
 	
 	//------------------------------------------------------- nbody settings
 	int nparticles; // needs to be be a power of two
@@ -160,7 +177,7 @@ int main(int argc, char* argv[])
 			 // should divide the value of nstep without remainder...
 			 // MUST be divisible by three
 	
-	int nthreads = 32; // should be the maximum number of work-items per work-group
+	int nthreadsperblock = 32; // should be the maximum number of work-items per work-group
 	myflt dt;
 	myflt epssqd;
 	
@@ -179,17 +196,19 @@ int main(int argc, char* argv[])
 	dt /= myflt(nburst);
 	nsteps = RoundDoubleToInt(finalTimeGiven / ((double)dt));
 	
+	//total should always be divisible by npartsperthread
 	int numPaddingPts = 0;
-	
-	if(true){//ctxtAndDevcs.IsCPU() == false) {
-		while(IsPowerOfTwo((unsigned int)(nparticles+numPaddingPts)) == false) {
-			numPaddingPts++;
-		}
-		if(numPaddingPts > 0) {
-			cout<<"simulation will use "<<nparticles<<" real particles, and "<<numPaddingPts<<" padding particles"<<endl;
-		} else {
-			cout<<"simulation will use "<<nparticles<<" particles"<<endl;
-		}
+	if(nparticles % npartsperthread != 0) {
+		numPaddingPts = npartsperthread - (nparticles % npartsperthread);
+	}
+	//number of threads must be a power of two
+	while(IsPowerOfTwo((unsigned int)((nparticles+numPaddingPts)/npartsperthread)) == false) {
+		numPaddingPts += npartsperthread;
+	}
+	if(numPaddingPts > 0) {
+		cout<<"simulation will use "<<nparticles<<" real particles, and "<<numPaddingPts<<" padding particles"<<endl;
+	} else {
+		cout<<"simulation will use "<<nparticles<<" particles"<<endl;
 	}
 	
 	std::vector<myflt4> positions_host(nparticles+numPaddingPts);
@@ -250,7 +269,7 @@ int main(int argc, char* argv[])
 	cout<<"allocating video memory..."<<endl;
 	
 	const int sizeOfPosArrays = ((int)sizeof(myflt4)) * (nparticles+numPaddingPts);
-	const int sizeOfPCache =    ((int)sizeof(myflt4)) * nthreads;
+	const int sizeOfPCache =    ((int)sizeof(myflt4)) * nthreadsperblock * npartsperthread;
 	
 	cl::Buffer* positionsAABuf = kernelClass.CreateBufForKernel(sizeOfPosArrays, CL_MEM_READ_WRITE, &err);	CheckCLErr(err, "cl::Buffer::Buffer()");
 	cl::Buffer* positionsBBBuf = kernelClass.CreateBufForKernel(sizeOfPosArrays, CL_MEM_READ_WRITE, &err);	CheckCLErr(err, "cl::Buffer::Buffer()");
@@ -291,8 +310,8 @@ int main(int argc, char* argv[])
 			
 			err = ctxtAndDevcs.GetQueue().enqueueNDRangeKernel(kernelClass.GetKernel(),//kernel
 									cl::NullRange,		   //offset
-									cl::NDRange(nparticles+numPaddingPts),   //global
-									cl::NDRange(nthreads),	   //local
+									cl::NDRange(nparticles+numPaddingPts), //global
+									cl::NDRange(nthreadsperblock), //local
 									nullptr,		   //events to finish before being queued
 									&event);		   //event representing this execution instance
 			CheckCLErr(err, "enqueueNDRangeKernel()");
@@ -304,8 +323,8 @@ int main(int argc, char* argv[])
 			
 			err = ctxtAndDevcs.GetQueue().enqueueNDRangeKernel(kernelClass.GetKernel(),//kernel
 									cl::NullRange,		   //offset
-									cl::NDRange(nparticles+numPaddingPts),   //global
-									cl::NDRange(nthreads),	   //local
+									cl::NDRange(nparticles+numPaddingPts), //global
+									cl::NDRange(nthreadsperblock), //local
 									nullptr,		   //events to finish before being queued
 									&event);		   //event representing this execution instance
 			CheckCLErr(err, "enqueueNDRangeKernel()");
@@ -318,7 +337,7 @@ int main(int argc, char* argv[])
 			err = ctxtAndDevcs.GetQueue().enqueueNDRangeKernel(kernelClass.GetKernel(),//kernel
 									cl::NullRange,		   //offset
 									cl::NDRange(nparticles+numPaddingPts),   //global
-									cl::NDRange(nthreads),	   //local
+									cl::NDRange(nthreadsperblock), //local
 									nullptr,		   //events to finish before being queued
 									&event);		   //event representing this execution instance
 			CheckCLErr(err, "enqueueNDRangeKernel()");

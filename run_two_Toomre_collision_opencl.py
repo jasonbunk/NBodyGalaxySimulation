@@ -35,6 +35,7 @@ OutputResultsFolder = "data/results/"
 GravitationalConst = 4.498309551e-8
 
 TotalNumPts = (298*2) #596
+particlesPerOpenCLThread = str( 1 )
 
 createNewInitialConditions = True
 
@@ -81,7 +82,7 @@ if createNewInitialConditions:
 	bothGalaxies.WriteInitialConditionsToFile(InitialConditionsFolder+"two_toomres_collision.data", AarsethHeader)
 	
 	print("Running compiled OpenCL C++ nbody code (on "+DEVICE_CPU_OR_GPU+") on initial conditions file")
-	os.system("./NBodySim_OpenCL_N2/nbodyocl "+DEVICE_CPU_OR_GPU+" "+InitialConditionsFolder+"two_toomres_collision.data "+OutputResultsFolder+"out_opencl.data NBodySim_OpenCL_N2/nbody_kernel_verlet.cl")
+	os.system("./NBodySim_OpenCL_N2/nbodyocl "+DEVICE_CPU_OR_GPU+" "+InitialConditionsFolder+"two_toomres_collision.data "+OutputResultsFolder+"out_opencl.data "+particlesPerOpenCLThread+" NBodySim_OpenCL_N2/nbody_kernel_verlet.cl")
 	
 	if doRender3D:
 		print("launching renderer...")

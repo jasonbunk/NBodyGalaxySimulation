@@ -63,9 +63,6 @@ if createNewInitialConditions:
 
 
 if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):
-    
-	print("beginning to make plots/video...")
-	
 	if MakePositionsVideo:
 		MakeVideo(galaxyNumPts, OutputResultsFolder+"out_aarseth_npts_"+str(TotalNumPts)+".data", "video_two_plummer_collision.avi", True)
 	if MakeDistributionsVideo:

@@ -21,7 +21,8 @@ OutputResultsFolder = "data/results/"
 
 GravitationalConst = 1.0
 
-TotalNumPts = 8192
+TotalNumPts = 4096
+particlesPerOpenCLThread = str( 2 )
 
 createNewInitialConditions = True
 
@@ -57,7 +58,7 @@ if createNewInitialConditions:
 	bothGalaxies.WriteInitialConditionsToFile(InitialConditionsFolder+"two_plummers_collision.data", AarsethHeader)
 	
 	print("Running compiled OpenCL C++ nbody code (on GPU) on Plummer initial conditions file")
-	os.system("./NBodySim_OpenCL_N2/nbodyocl gpu "+InitialConditionsFolder+"two_plummers_collision.data "+OutputResultsFolder+"out_opencl.data NBodySim_OpenCL_N2/nbody_kernel_verlet.cl")
+	os.system("./NBodySim_OpenCL_N2/nbodyocl gpu "+InitialConditionsFolder+"two_plummers_collision.data "+OutputResultsFolder+"out_opencl.data "+particlesPerOpenCLThread+" NBodySim_OpenCL_N2/nbody_kernel_verlet.cl")
 	
 
 
