@@ -32,25 +32,25 @@ NBODYCALCULATOR = ""
 if str(sys.argv[2]) == "aarseth":
 	print("python script was told to use aarseth code (nbody0-lab.c)")
 	OUTFILENAME = OutputResultsFolder+"out_aarseth_plumbench.data"
-	NBODYCOMPILER = "(cd NBodySim_Aarseth && make)"
+	NBODYCOMPILER = "(cd NBodySim_Aarseth && make clean && make)"
 	NBODYCALCULATOR = "./NBodySim_Aarseth/aarseth "+InitialConditionsFolder+"initialconditions.data "+OUTFILENAME
 
 elif str(sys.argv[2]) == "simplecpu":
 	print("python script was told to use simplecpu code (single-threaded C++)")
 	OUTFILENAME = OutputResultsFolder+"out_simplecpu_plumbench.data"
-	NBODYCOMPILER = "(cd NBodySim_SimpleCPU && make)"
+	NBODYCOMPILER = "(cd NBodySim_SimpleCPU && make clean && make)"
 	NBODYCALCULATOR = "./NBodySim_SimpleCPU/nbodycpp "+InitialConditionsFolder+"initialconditions.data "+OUTFILENAME
 
 elif str(sys.argv[2]) == "opencl-cpu":
 	print("python script was told to use opencl code (cpu)")
 	OUTFILENAME = OutputResultsFolder+"out_opencl_cpu_plumbench.data"
-	NBODYCOMPILER = "(cd NBodySim_OpenCL_N2 && make)"
+	NBODYCOMPILER = "(cd NBodySim_OpenCL_N2 && make clean && make)"
 	NBODYCALCULATOR = "./NBodySim_OpenCL_N2/nbodyocl cpu "+InitialConditionsFolder+"initialconditions.data "+OUTFILENAME+" "+particlesPerOpenCLThread+" NBodySim_OpenCL_N2/nbody_kernel_verlet.cl"
 
 elif str(sys.argv[2]) == "opencl-gpu":
 	print("python script was told to use opencl code (gpu)")
 	OUTFILENAME = OutputResultsFolder+"out_opencl_gpu_plumbench.data"
-	NBODYCOMPILER = "(cd NBodySim_OpenCL_N2 && make)"
+	NBODYCOMPILER = "(cd NBodySim_OpenCL_N2 && make clean && make)"
 	NBODYCALCULATOR = "./NBodySim_OpenCL_N2/nbodyocl gpu "+InitialConditionsFolder+"initialconditions.data "+OUTFILENAME+" "+particlesPerOpenCLThread+" NBodySim_OpenCL_N2/nbody_kernel_verlet.cl"
 
 else:
@@ -80,8 +80,8 @@ print("Generating Plummer galaxy initial conditions...")
 newGalaxy = PlummerGalaxy()
 newGalaxy.npts = galaxyNumPts
 newGalaxy.R = 1.0
-newGalaxy.timestep = 0.1
-newGalaxy.timemax = 10.0
+newGalaxy.timestep = 0.07
+newGalaxy.timemax = 50.0
 newGalaxy.ZeroVelocities_Bool = False
 newGalaxy.GenerateInitialConditions(0,0,0)
 newGalaxy.WriteToFile(InitialConditionsFolder+"initialconditions.data")

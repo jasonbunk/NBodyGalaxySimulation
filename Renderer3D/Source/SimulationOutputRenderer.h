@@ -9,6 +9,8 @@
 class SimulationOutputRenderer : public SimulationSystem
 {
 	FILE* dataFile;
+	int numParticlesPerStep;
+    
 	int framesSoFar;
 	bool drawNextStep;
 	std::vector<phys::vec3> lastDrawnStars;
@@ -16,11 +18,11 @@ class SimulationOutputRenderer : public SimulationSystem
 	double time_step_between_draws;
 	
 public:
-	int numParticlesPerStep;
-	
+	bool drawtwocolors;
 	
 	SimulationOutputRenderer() : SimulationSystem(), dataFile(NULL),
 													drawNextStep(true),
+													drawtwocolors(false),
 													framesSoFar(0),
 													numParticlesPerStep(1),
 													time_accumulated_since_last_draw(0.0),

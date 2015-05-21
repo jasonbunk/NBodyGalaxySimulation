@@ -51,6 +51,19 @@ void SimulationOutputRenderer::OpenDataFile(std::string filename)
 	} else {
 		cout<<"error: unable to open data file \""<<filename<<"\""<<endl;
 	}
+	
+	int64_t NPARTICLES_READ;
+	if(fread(&NPARTICLES_READ, 8, 1, dataFile) < 1) {
+        cout<<"UNABLE TO READ FILE HEADER"<<endl;
+        exit(0);
+	}
+	numParticlesPerStep = (int)NPARTICLES_READ;
+	//there is another 8 bytes of header that does nothing right now; just read it to seek past it
+	if(fread(&NPARTICLES_READ, 8, 1, dataFile) < 1) {
+        cout<<"UNABLE TO READ FILE HEADER"<<endl;
+        exit(0);
+	}
+	cout<<"this file has "<<numParticlesPerStep<<" particles in the simulation"<<endl;
 }
 
 
@@ -118,7 +131,7 @@ void SimulationOutputRenderer::draw()
 				}
 				lastDrawnStars.push_back(oneStarPos);
 				
-				if(particlesReadThisStep < (numParticlesPerStep/2)) {
+				if(drawtwocolors && particlesReadThisStep < (numParticlesPerStep/2)) {
 					glColor4ub(255, 25, 25, 255);
 				} else {
 					glColor4ub(25, 25, 255, 255);
@@ -146,7 +159,7 @@ void SimulationOutputRenderer::draw()
 		int numStarsDrawnn = lastDrawnStars.size();
 		for(int i=0; i<numStarsDrawnn; i++) {
 			
-			if(i < (numStarsDrawnn/2)) {
+			if(drawtwocolors && i < (numStarsDrawnn/2)) {
 				glColor4ub(255, 25, 25, 255);
 			} else {
 				glColor4ub(25, 25, 255, 255);

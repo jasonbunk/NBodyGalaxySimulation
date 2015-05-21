@@ -28,6 +28,9 @@
 #include <vector>
 using std::cout; using std::endl;
 
+#ifdef USE_OMP
+#include <omp.h>
+#endif
 
 static double NEWTONS_GRAVITY_CONSTANT = 1.0;
 
@@ -89,27 +92,37 @@ public:
 };
 
 
-void VerletUpdate(std::vector<double> & masses,
-			std::vector<point> & positionsAA, // step n-1
-			std::vector<point> & positionsBB, // step n
-			std::vector<point> & positionsCC, //predicted step n+1
+void VerletUpdate(std::vector<double> * masses,
+			std::vector<point> * positionsAA, // step n-1
+			std::vector<point> * positionsBB, // step n
+			std::vector<point> * positionsCC, //predicted step n+1
 			double dt, double epssqd)
 {
-	int nparticles = masses.size();
+	int nparticles = masses->size();
+	
+	int i, j;
 	point accelSaved;
 	point posdiff;
 	double temp;
-	for(int i=0; i<nparticles; i++) {
+
+#ifdef USE_OMP
+omp_set_num_threads(4);	
+#pragma omp parallel shared (masses, positionsAA, positionsBB, positionsCC, dt, epssqd, nparticles) private(i, j, accelSaved, posdiff, temp)
+#pragma omp for schedule(dynamic) nowait
+#endif
+
+	for(i=0; i<nparticles; i++) {
 		accelSaved.zero();
-		for(int j=0; j<nparticles; j++) {
+		for(j=0; j<nparticles; j++) {
 			if(i != j) {
-				posdiff = positionsBB[j] - positionsBB[i];
+				posdiff = (*positionsBB)[j] - (*positionsBB)[i];
 				temp = posdiff.length();
-				accelSaved += ((posdiff*NEWTONS_GRAVITY_CONSTANT*masses[j]) / (temp*temp*temp + epssqd));
+				accelSaved += ((posdiff*NEWTONS_GRAVITY_CONSTANT*(*masses)[j]) / (temp*temp*temp + epssqd));
 			}
 		}
-		positionsCC[i] = positionsBB[i]*2.0 - positionsAA[i] + accelSaved*dt*dt;
+		(*positionsCC)[i] = (*positionsBB)[i]*2.0 - (*positionsAA)[i] + accelSaved*dt*dt;
 	}
+
 }
 
 
@@ -256,9 +269,9 @@ int main(int argc, char** argv)
 	
 	for(int step=0; step<nsteps; step+=nburst) {
 		for(int burst=0; burst<nburst; burst+=3) {
-			VerletUpdate(masses, positionsAA, positionsBB, positionsCC, dt, epssqd);
-			VerletUpdate(masses, positionsBB, positionsCC, positionsAA, dt, epssqd);
-			VerletUpdate(masses, positionsCC, positionsAA, positionsBB, dt, epssqd);
+			VerletUpdate(&masses, &positionsAA, &positionsBB, &positionsCC, dt, epssqd);
+			VerletUpdate(&masses, &positionsBB, &positionsCC, &positionsAA, dt, epssqd);
+			VerletUpdate(&masses, &positionsCC, &positionsAA, &positionsBB, dt, epssqd);
 		}
 		//save to disk
 		writeParticles(outputFile, positionsBB);

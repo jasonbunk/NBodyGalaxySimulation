@@ -26,13 +26,13 @@ using std::cout; using std::endl;
 
 void StartSimulation(int argc, char** argv)
 {
-	if(argc <= 2) {
-		cout<<"Usage:  [DATAFILE-TO-RENDER]  [NUMPARTICLES]  [AUTOSAVEIMAGES?]  [optional:showrenderfps?]  [optional:showgrid?]  [optional:camera-coords-file]  [optional:autoplay]"<<endl;
+	if(argc < 4) {
+		cout<<"Usage:  [DATAFILE-TO-RENDER]  [TWOCOLOR?]  [AUTOSAVEIMAGES?]  [optional:showrenderfps?]  [optional:showgrid?]  [optional:camera-coords-file]  [optional:autoplay]"<<endl;
 		exit(1);
 	}
 	SimulationOutputRenderer * simsys = new SimulationOutputRenderer();
 	simsys->OpenDataFile(argv[1]);
-	simsys->numParticlesPerStep = atoi(argv[2]);
+	simsys->drawtwocolors = (atoi(argv[2]) != 0);
 	
 	std::string argv2(argv[3]);
 	if(argv2 == "1" || argv2 == "TRUE" || argv2 == "True" || argv2 == "true") {
@@ -70,6 +70,8 @@ void StartSimulation(int argc, char** argv)
 	gGameSystem.camera_rotation.Nullify();
 	gGameSystem.camera_pos.Nullify();
 	
+    gGameSystem.camera_rotation.r = 10.0;
+    gGameSystem.camera_original_r = 10.0;
 	if(argc >= 7) {
 		std::ifstream cameraposfile(argv[6]);
 		bool success = false;
@@ -84,9 +86,6 @@ void StartSimulation(int argc, char** argv)
 			cout<<"ERROR reading camera position file!"<<endl;
 		}
 		cameraposfile.close();
-	} else {
-		gGameSystem.camera_rotation.r = 10.0;
-		gGameSystem.camera_original_r = 10.0;
 	}
 	
 	if(argc >= 8) {
