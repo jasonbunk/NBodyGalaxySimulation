@@ -91,6 +91,7 @@ public:
 	}
 };
 
+static int COUNTERKILL = 0;
 
 void VerletUpdate(std::vector<double> * masses,
 			std::vector<point> * positionsAA, // step n-1
@@ -105,14 +106,19 @@ void VerletUpdate(std::vector<double> * masses,
 	point posdiff;
 	double temp;
 
+/*
 #ifdef USE_OMP
-omp_set_num_threads(4);	
+//omp_set_num_threads(4);	
 #pragma omp parallel shared (masses, positionsAA, positionsBB, positionsCC, dt, epssqd, nparticles) private(i, j, accelSaved, posdiff, temp)
-#pragma omp for schedule(dynamic) nowait
+#pragma omp for nowait
 #endif
+*/
 
 	for(i=0; i<nparticles; i++) {
-		accelSaved.zero();
+		
+    cout<<"positionsBB["<<i<<"] == "<<(*positionsBB)[i].x<<", "<<(*positionsBB)[i].y<<", "<<(*positionsBB)[i].z<<endl;
+      
+    accelSaved.zero();
 		for(j=0; j<nparticles; j++) {
 			if(i != j) {
 				posdiff = (*positionsBB)[j] - (*positionsBB)[i];
@@ -120,9 +126,15 @@ omp_set_num_threads(4);
 				accelSaved += ((posdiff*NEWTONS_GRAVITY_CONSTANT*(*masses)[j]) / (temp*temp*temp + epssqd));
 			}
 		}
-		(*positionsCC)[i] = (*positionsBB)[i]*2.0 - (*positionsAA)[i] + accelSaved*dt*dt;
+    cout<<"accelSaved["<<i<<"] == "<<accelSaved.x<<", "<<accelSaved.y<<", "<<accelSaved.z<<endl;
+		
+    (*positionsCC)[i] = (*positionsBB)[i]*2.0 - (*positionsAA)[i] + accelSaved*dt*dt;
 	}
-
+  
+  COUNTERKILL++;
+  if(COUNTERKILL >= 4) {
+    exit(0);
+  }
 }
 
 
@@ -159,6 +171,8 @@ static void readParameters(FILE* inputFile, int* numParticlesPtr, double* timeSt
 	//read G
 	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 5"<<endl; exit(1);}
 	NEWTONS_GRAVITY_CONSTANT = temp;
+  
+  cout<<"JJJJJJJJJJJJJJJJJJJJJJJJJJUST read timestep == "<<(*timeStepPtr)<<endl;
 }
 static void readParticles(FILE* inputFile, std::vector<double> & masses, std::vector<point> & positions, std::vector<point> & velocities) {
 	if(sizeof(double) != DBLBYTES){cout<<"WARNING: unexpected sizeof(double) == "<<sizeof(double)<<endl;}
@@ -222,10 +236,12 @@ int main(int argc, char** argv)
 	double dt, epssqd;
 	double finalTimeGiven;
 	readParameters(inputFile, &nparticles, &dt, &finalTimeGiven, &epssqd);
+	cout<<"simulation will use "<<nparticles<<" particles, dt == "<<dt<<", nburst == "<<nburst<<endl;
 	dt /= double(nburst);
+	cout<<"simulation will use "<<nparticles<<" particles, dt == "<<dt<<", nburst == "<<nburst<<endl;
 	int nsteps = RoundDoubleToInt(finalTimeGiven / ((double)dt));
-	
-	cout<<"simulation will use "<<nparticles<<" particles"<<endl;
+  
+	cout<<"simulation will use "<<nparticles<<" particles, dt == "<<dt<<", nburst == "<<nburst<<endl;
 	
 	std::vector<double> masses(nparticles);
 	std::vector<point> velocities(nparticles);
@@ -266,14 +282,24 @@ int main(int argc, char** argv)
 	writeParticles(outputFile, positionsAA);
 	writeParticles(outputFile, positionsBB);
 	
-	
+  cout<<"positionsAA[0]="<<(fabs(positionsAA[0].x)+fabs(positionsAA[0].y)+fabs(positionsAA[0].z))<<", positionsAA[1]="<<(fabs(positionsAA[1].x)+fabs(positionsAA[1].y)+fabs(positionsAA[1].z))<<endl;
+  cout<<"positionsBB[0]="<<(fabs(positionsBB[0].x)+fabs(positionsBB[0].y)+fabs(positionsBB[0].z))<<", positionsBB[1]="<<(fabs(positionsBB[1].x)+fabs(positionsBB[1].y)+fabs(positionsBB[1].z))<<endl;
+  cout<<"positionsBB[90]="<<(fabs(positionsBB[90].x)+fabs(positionsBB[90].y)+fabs(positionsBB[90].z))<<", positionsBB[1]="<<(fabs(positionsBB[91].x)+fabs(positionsBB[91].y)+fabs(positionsBB[91].z))<<endl;
+  cout<<"NEWTONS_GRAVITY_CONSTANT == "<<NEWTONS_GRAVITY_CONSTANT<<endl;
+  cout<<"dt == "<<dt<<endl;
+  cout<<"========================================= looping"<<endl;
+  
 	for(int step=0; step<nsteps; step+=nburst) {
 		for(int burst=0; burst<nburst; burst+=3) {
 			VerletUpdate(&masses, &positionsAA, &positionsBB, &positionsCC, dt, epssqd);
 			VerletUpdate(&masses, &positionsBB, &positionsCC, &positionsAA, dt, epssqd);
 			VerletUpdate(&masses, &positionsCC, &positionsAA, &positionsBB, dt, epssqd);
 		}
-		//save to disk
+		
+    cout<<"positionsAA[0]="<<(fabs(positionsAA[0].x)+fabs(positionsAA[0].y)+fabs(positionsAA[0].z))<<", positionsAA[1]="<<(fabs(positionsAA[1].x)+fabs(positionsAA[1].y)+fabs(positionsAA[1].z))<<endl;
+    cout<<"positionsBB[0]="<<(fabs(positionsBB[0].x)+fabs(positionsBB[0].y)+fabs(positionsBB[0].z))<<", positionsBB[1]="<<(fabs(positionsBB[1].x)+fabs(positionsBB[1].y)+fabs(positionsBB[1].z))<<endl;
+    
+    //save to disk
 		writeParticles(outputFile, positionsBB);
 		
 		//cout<<"so far, completed "<<(1+(step/nburst))<<" bursts"<<endl;

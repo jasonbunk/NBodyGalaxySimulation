@@ -100,6 +100,8 @@ static void readParameters(FILE* inputFile, int* numParticlesPtr, myflt* timeSte
 	//read G
 	if(fread(&temp, DBLBYTES, 1, inputFile) < 1){cout<<"Error reading initial conditions file 5"<<endl; exit(1);}
 	NEWTONS_GRAVITATIONAL_CONSTANT = (myflt)temp;
+  
+  cout<<"JJJJJJJJJJJJJJJJJJJJJJJJJJUST read timestep == "<<(*timeStepPtr)<<endl;
 }
 static void readParticles(FILE* inputFile, int nparticles, std::vector<myflt4> & positionsAndMasses, std::vector<myflt4> & velocities) {
 	if(sizeof(double) != DBLBYTES){cout<<"WARNING: unexpected sizeof(double) == "<<sizeof(double)<<endl;}
@@ -218,6 +220,8 @@ int main(int argc, char* argv[])
 	
 	readParticles(inputFile, nparticles, positionsOneStepBackForVerlet, velocitysInitial);
 	
+  cout<<"positionsOneStepBackForVerlet[0]="<<(fabs(positionsOneStepBackForVerlet[0].s[0])+fabs(positionsOneStepBackForVerlet[0].s[1])+fabs(positionsOneStepBackForVerlet[0].s[2]))<<", positionsOneStepBackForVerlet[1]="<<(fabs(positionsOneStepBackForVerlet[1].s[0])+fabs(positionsOneStepBackForVerlet[1].s[1])+fabs(positionsOneStepBackForVerlet[1].s[2]))<<endl;
+  
 	myflt4 accelerationsInitial;
 	myflt atemp0, atemp1, atemp2;
 	myflt temp;
@@ -264,6 +268,9 @@ int main(int argc, char* argv[])
 	writeParticles(outputFile, nparticles, positionsOneStepBackForVerlet);
 	writeParticles(outputFile, nparticles, positions_host);
 	
+  cout<<"positionsOneStepBackForVerlet[0]="<<(fabs(positionsOneStepBackForVerlet[0].s[0])+fabs(positionsOneStepBackForVerlet[0].s[1])+fabs(positionsOneStepBackForVerlet[0].s[2]))<<", positionsOneStepBackForVerlet[1]="<<(fabs(positionsOneStepBackForVerlet[1].s[0])+fabs(positionsOneStepBackForVerlet[1].s[1])+fabs(positionsOneStepBackForVerlet[1].s[2]))<<endl;
+  cout<<"positions_host[0]="<<(fabs(positions_host[0].s[0])+fabs(positions_host[0].s[1])+fabs(positions_host[0].s[2]))<<", positions_host[1]="<<(fabs(positions_host[1].s[0])+fabs(positions_host[1].s[1])+fabs(positions_host[1].s[2]))<<endl;
+  
 	//------------------------------------------------------------
 	
 	cout<<"allocating video memory..."<<endl;
