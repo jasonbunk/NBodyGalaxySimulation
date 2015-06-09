@@ -21,12 +21,12 @@ OutputResultsFolder = "data/results/"
 
 GravitationalConst = 1.0
 
-TotalNumPts = 256
-numMPIprocs = str( 1 )
-numMPImemgrps = str( 1 ) #will be forced to be 2
-nburstburst = str( 6 )
+TotalNumPts = 600
+numMPIprocs = str( 6 )
+numMPImemgrps = str( 2 ) #will be forced to be 2
+nburstburst = str( 3 )
 
-createNewInitialConditions = False
+createNewInitialConditions = True
 
 MakePositionsVideo = False
 UseImageMagickForFancierVideo = False

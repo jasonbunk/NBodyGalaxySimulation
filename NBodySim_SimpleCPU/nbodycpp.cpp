@@ -91,7 +91,6 @@ public:
 	}
 };
 
-static int COUNTERKILL = 0;
 
 void VerletUpdate(std::vector<double> * masses,
 			std::vector<point> * positionsAA, // step n-1
@@ -106,19 +105,14 @@ void VerletUpdate(std::vector<double> * masses,
 	point posdiff;
 	double temp;
 
-/*
 #ifdef USE_OMP
 //omp_set_num_threads(4);	
 #pragma omp parallel shared (masses, positionsAA, positionsBB, positionsCC, dt, epssqd, nparticles) private(i, j, accelSaved, posdiff, temp)
 #pragma omp for nowait
 #endif
-*/
 
 	for(i=0; i<nparticles; i++) {
-		
-    cout<<"positionsBB["<<i<<"] == "<<(*positionsBB)[i].x<<", "<<(*positionsBB)[i].y<<", "<<(*positionsBB)[i].z<<endl;
-      
-    accelSaved.zero();
+		accelSaved.zero();
 		for(j=0; j<nparticles; j++) {
 			if(i != j) {
 				posdiff = (*positionsBB)[j] - (*positionsBB)[i];
@@ -126,15 +120,9 @@ void VerletUpdate(std::vector<double> * masses,
 				accelSaved += ((posdiff*NEWTONS_GRAVITY_CONSTANT*(*masses)[j]) / (temp*temp*temp + epssqd));
 			}
 		}
-    cout<<"accelSaved["<<i<<"] == "<<accelSaved.x<<", "<<accelSaved.y<<", "<<accelSaved.z<<endl;
-		
-    (*positionsCC)[i] = (*positionsBB)[i]*2.0 - (*positionsAA)[i] + accelSaved*dt*dt;
+		(*positionsCC)[i] = (*positionsBB)[i]*2.0 - (*positionsAA)[i] + accelSaved*dt*dt;
 	}
-  
-  COUNTERKILL++;
-  if(COUNTERKILL >= 4) {
-    exit(0);
-  }
+
 }
 
 

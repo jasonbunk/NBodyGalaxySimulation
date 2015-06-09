@@ -208,9 +208,7 @@ void VerletUpdate(
   const double dtgscalar = (NEWTONS_GRAVITY_CONSTANT * dt * dt);
 	std::vector<pts3doubles>* tempptrswap;
 	
-	//this will be forwarded along, and used for the first step
-	//memcpy(&((*poscache1)[0]), &((*positionsBB)[0]), DBLBYTES*NumLocalParticles*3);
-	
+  
   //initialize to "neighbors"/"buddies" with the same modulo cache-index in the nearby cache
   nextRank = AdvanceRankByCacheAmount(mpi_myrank);
   prevRank = ReduceRankByCacheAmount(mpi_myrank);
@@ -268,8 +266,7 @@ void VerletUpdate(
       
 		}
 	}
-  //exit(0);
-	
+  
 	//After summing pairwise interactions, finish up (note: the accelerations need to be multiplied by Newtons Gravity Constant; they haven't yet)
 	
 	#ifdef USE_OMP
@@ -420,14 +417,17 @@ int main(int argc, char** argv)
 	
   if(NumLocalParticles*mpi_size != GlobalNumParticles) {
     cout<<"Error: not a divisible number of particles local to an MPI proc"<<endl;
+    cout<<"    NumLocalParticles == "<<NumLocalParticles<<", mpi_size == "<<mpi_size<<", GlobalNumParticles == "<<GlobalNumParticles<<", mpi_numCacheGroups == "<<mpi_numCacheGroups<<endl;
     MPIExit(1);
   }
   if(NumCachedParticles*mpi_numCacheGroups != GlobalNumParticles) {
     cout<<"Warning: not a divisible number of cached particles (when partitioning world memory)"<<endl;
+    cout<<"    NumLocalParticles == "<<NumLocalParticles<<", mpi_size == "<<mpi_size<<", GlobalNumParticles == "<<GlobalNumParticles<<", mpi_numCacheGroups == "<<mpi_numCacheGroups<<endl;
     MPIExit(1);
   }
   if(mpi_numRanksWithinACache*mpi_numCacheGroups != mpi_size) {
     cout<<"Warning: num MPI procs within a cache group is not a whole number"<<endl;
+    cout<<"    NumLocalParticles == "<<NumLocalParticles<<", mpi_size == "<<mpi_size<<", GlobalNumParticles == "<<GlobalNumParticles<<", mpi_numCacheGroups == "<<mpi_numCacheGroups<<endl;
     MPIExit(1);
   }
   
@@ -457,16 +457,6 @@ int main(int argc, char** argv)
   
   memcpy(&(positionsAA[0]), &(poscache2[mpi_myIndexWithinCache*NumLocalParticles*3]), DBLBYTES*NumLocalParticles*3);
   
-
-  /*for(int jjis=0; jjis<NumLocalParticles; jjis++) {
-    cout<<"posiAA["<<jjis<<"] == "<<positionsAA[jjis*3+0]<<","<<positionsAA[jjis*3+1]<<","<<positionsAA[jjis*3+2]<<"), "
-    <<",  posiBB["<<jjis<<"] == "<<positionsBB[jjis*3+0]<<","<<positionsBB[jjis*3+1]<<","<<positionsBB[jjis*3+2]<<")"<<endl;
-  }
-  cout<<"=================================jasdkfjlfskkfdjflsjdjkfsajjkfsdkjjfdslljdfjlskdjl======== looping"<<endl;
-  cout<<"poscache2[0]="<<(fabs(poscache2[0])+fabs(poscache2[1])+fabs(poscache2[2]))<<", poscache2[1]="<<(fabs(poscache2[3])+fabs(poscache2[4])+fabs(poscache2[5]))<<endl;
-  cout<<"positionsAA[0]="<<(fabs(positionsAA[0])+fabs(positionsAA[1])+fabs(positionsAA[2]))<<", positionsAA[1]="<<(fabs(positionsAA[3])+fabs(positionsAA[4])+fabs(positionsAA[5]))<<endl;
-  cout<<"nburst == "<<nburst<<endl;*/
-  
   
 	TempPoint accelSaved;
 	TempPoint posdiff;
@@ -495,8 +485,6 @@ int main(int argc, char** argv)
 		positionsBB[ii*3+2] = positionsAA[ii*3+2] + poscache1[ii*3+2]*dt + accelSaved[2]*0.5*NEWTONS_GRAVITY_CONSTANT*dt*dt;
 	}
   
-  cout<<"positionsBB[0]="<<(fabs(positionsBB[0])+fabs(positionsBB[1])+fabs(positionsBB[2]))<<", positionsBB[1]="<<(fabs(positionsBB[3])+fabs(positionsBB[4])+fabs(positionsBB[5]))<<endl;
-  //cout<<"dt == "<<dt<<", NEWTONS_GRAVITY_CONSTANT == "<<NEWTONS_GRAVITY_CONSTANT<<endl;
   
   
   if(mpi_numCacheGroups > 1) {
