@@ -141,6 +141,19 @@ void displayFunc(void)
 	//gGameSystem.physics_system->DrawSystemStuff();
 	gGameSystem.Draw_EverythingExceptMousePointer();
 	
+	double axesLineLength = 3.0;
+	glBegin(GL_LINES);
+	glColor4ub(255,0,0,255);
+	glVertex3d(0,0,0);
+	glVertex3d(axesLineLength,0,0);
+	glColor4ub(0,255,0,255);
+	glVertex3d(0,0,0);
+	glVertex3d(0,axesLineLength,0);
+	glColor4ub(0,0,255,255);
+	glVertex3d(0,0,0);
+	glVertex3d(0,0,axesLineLength);
+	glEnd();
+	
 	if(DrawGridForScaleReference) {
 		if(gGameSystem.physics_system != nullptr) {
 			gGameSystem.physics_system->DrawSystemStuff();
@@ -367,7 +380,7 @@ int main(int argc, char** argv)
 			//sfml_window->PreserveOpenGLStates(true);
 			sf::Image renderedImg = sfml_window->capture();
 			char filenameout[1024];
-			sprintf(filenameout, "data/videoframes/__%05d.png", gGameSystem.physics_system->GetNumFramesDraw());
+			sprintf(filenameout, "frames/__%05d.png", gGameSystem.physics_system->GetNumFramesDraw());
 			renderedImg.saveToFile(filenameout);
 		}
 	}

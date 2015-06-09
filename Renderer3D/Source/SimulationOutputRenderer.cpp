@@ -19,7 +19,7 @@ using std::cout; using std::endl;
 
 double SimulationOutputRenderer::GetGridWidth_ForDrawingPlanes() const
 {
-	return 1.0;
+	return 6.0;
 }
 
 
@@ -43,27 +43,17 @@ void SimulationOutputRenderer::UpdateSystemStuff_EachPhysicsStep(double frametim
 	}
 }
 
-void SimulationOutputRenderer::OpenDataFile(std::string filename)
+bool SimulationOutputRenderer::OpenDataFile(std::string filename)
 {
-	dataFile = fopen(filename.c_str(), "rb");
+	FILE* dataFile = fopen(filename.c_str(), "rb");
 	if(dataFile != NULL) {
-		cout<<"successfully opened data file!"<<endl;
+		cout<<"successfully opened data file \'"<<filename<<"\'"<<endl;
+		dataFiles.push_back(dataFile);
+		return true;
 	} else {
-		cout<<"error: unable to open data file \""<<filename<<"\""<<endl;
+		cout<<"error: unable to open data file \'"<<filename<<"\'"<<endl;
 	}
-	
-	int64_t NPARTICLES_READ;
-	if(fread(&NPARTICLES_READ, 8, 1, dataFile) < 1) {
-        cout<<"UNABLE TO READ FILE HEADER"<<endl;
-        exit(0);
-	}
-	numParticlesPerStep = (int)NPARTICLES_READ;
-	//there is another 8 bytes of header that does nothing right now; just read it to seek past it
-	if(fread(&NPARTICLES_READ, 8, 1, dataFile) < 1) {
-        cout<<"UNABLE TO READ FILE HEADER"<<endl;
-        exit(0);
-	}
-	cout<<"this file has "<<numParticlesPerStep<<" particles in the simulation"<<endl;
+	return false;
 }
 
 
@@ -90,6 +80,16 @@ static bool ReadOnePosition(FILE* fromHere, phys::vec3 & intoHere)
 	return true;
 }
 
+SimulationOutputRenderer::~SimulationOutputRenderer() {
+	if(dataFiles.empty() == false) {
+		auto DFILE = dataFiles.begin();
+		while(DFILE != dataFiles.end()) {
+			fclose(*DFILE);
+			DFILE = dataFiles.erase(DFILE);
+		}
+	}
+}
+
 
 void SimulationOutputRenderer::draw()
 {
@@ -104,17 +104,8 @@ void SimulationOutputRenderer::draw()
 	glPointParameterfv(GL_POINT_DISTANCE_ATTENUATION, atten);
 	glPointSize(400.0); //size of stars as points
 	
-	//glColor4ub(255, 255, 255, 255);
 	
-	
-	/*GLUquadricObj* Sphere = gluNewQuadric();
-	gluSphere(Sphere, 0.02, 20, 20);
-	glBegin(GL_POINTS);
-	glVertex3d(0.0, 0.0, 0.05);
-	glEnd();*/
-	
-	
-	if(drawNextStep && dataFile != NULL) {
+	if(drawNextStep && dataFiles.empty() == false) {
 		bool needToClearLastDrawn = true;
 		phys::vec3 oneStarPos;
 		int particlesReadThisStep = 0;
@@ -123,29 +114,42 @@ void SimulationOutputRenderer::draw()
 		
 		for(; particlesReadThisStep < numParticlesPerStep; particlesReadThisStep++) {
 			
-			if(ReadOnePosition(dataFile, oneStarPos)) {
-				
-				if(needToClearLastDrawn) {
-					lastDrawnStars.clear();
-					needToClearLastDrawn = false;
-				}
-				lastDrawnStars.push_back(oneStarPos);
-				
-				if(drawtwocolors && particlesReadThisStep < (numParticlesPerStep/2)) {
-					glColor4ub(255, 25, 25, 255);
+			bool done_reading = false;
+			auto DFILE = dataFiles.begin();
+			int coloriter = -1;
+			while(DFILE != dataFiles.end()) {
+				coloriter++;
+				if(ReadOnePosition(*DFILE, oneStarPos)) {
+					
+					if(needToClearLastDrawn) {
+						lastDrawnStars.clear();
+						needToClearLastDrawn = false;
+					}
+					lastDrawnStars.push_back(std::pair<int,phys::vec3>(coloriter,oneStarPos));
+					
+					switch(coloriter) {
+					case 0: glColor4ub(255, 25, 25, 255); break;
+					case 1: glColor4ub(25, 255,255, 255); break;
+					case 2: glColor4ub(255, 25,255, 255); break;
+					case 3: glColor4ub(255,255, 25, 255); break;
+					case 4: glColor4ub(25, 255, 25, 255); break;
+					case 5: glColor4ub(25,  25,225, 255); break;
+					default:glColor4ub(255, 255,255, 255); break;
+					}
+					
+					glVertex3d(oneStarPos.x, oneStarPos.y, oneStarPos.z);
+					
+					DFILE++;
 				} else {
-					glColor4ub(25, 25, 255, 255);
+					cout<<"done reading file"<<endl;
+					done_reading = true;
+					fclose(*DFILE);
+					DFILE = dataFiles.erase(DFILE);
 				}
-				
-				glVertex3d(oneStarPos.x, oneStarPos.y, oneStarPos.z);
-				
-				
-			} else {
-				cout<<"done reading file"<<endl;
-				fclose(dataFile);
-				dataFile = NULL;
-				glEnd();
+			}
+			if(done_reading) {
 				framesSoFar++;
+				glEnd();
 				return;
 			}
 		}
@@ -156,16 +160,26 @@ void SimulationOutputRenderer::draw()
 		drawNextStep = false;
 	} else if(lastDrawnStars.empty()==false) {
 		glBegin(GL_POINTS);
+		int coloriter = 0;
 		int numStarsDrawnn = lastDrawnStars.size();
 		for(int i=0; i<numStarsDrawnn; i++) {
-			
-			if(drawtwocolors && i < (numStarsDrawnn/2)) {
+					
+					switch(lastDrawnStars[i].first) {
+					case 0: glColor4ub(255, 25, 25, 255); break;
+					case 1: glColor4ub(25, 255,255, 255); break;
+					case 2: glColor4ub(255, 25,255, 255); break;
+					case 3: glColor4ub(255,255, 25, 255); break;
+					case 4: glColor4ub(25, 255, 25, 255); break;
+					case 5: glColor4ub(25,  25,225, 255); break;
+					default:glColor4ub(255, 255,255, 255); break;
+					}
+			/*if(i < (numStarsDrawnn/2)) {
 				glColor4ub(255, 25, 25, 255);
 			} else {
 				glColor4ub(25, 25, 255, 255);
-			}
+			}*/
 			
-			glVertex3d(lastDrawnStars[i].x, lastDrawnStars[i].y, lastDrawnStars[i].z);
+			glVertex3d(lastDrawnStars[i].second.x, lastDrawnStars[i].second.y, lastDrawnStars[i].second.z);
 		}
 		glEnd();
 	}
@@ -180,12 +194,13 @@ if(text_buffer != nullptr)
 		sprintf____s(text_buffer, "framesSoFar: %d", framesSoFar);
 	}
 	else if(line_n == 1) {
-		sprintf____s(text_buffer, "time: %f", ((float)framesSoFar)*0.07f);
+		sprintf____s(text_buffer, "time: %f", ((float)framesSoFar)*0.25f);
 	}
 	else if(line_n == 2) {
-		sprintf____s(text_buffer, "object 0 was at: (%f, %f, %f)", lastDrawnStars.empty()?0.0f:((float)lastDrawnStars[0].x),
-																   lastDrawnStars.empty()?0.0f:((float)lastDrawnStars[0].y),
-																   lastDrawnStars.empty()?0.0f:((float)lastDrawnStars[0].z));
+		int lastpart = 0;//lastDrawnStars.size()-1;
+		sprintf____s(text_buffer, "object 0 was at: (%f, %f, %f)", lastDrawnStars.empty()?0.0f:((float)lastDrawnStars[lastpart].second.x),
+																   lastDrawnStars.empty()?0.0f:((float)lastDrawnStars[lastpart].second.y),
+																   lastDrawnStars.empty()?0.0f:((float)lastDrawnStars[lastpart].second.z));
 	}
 	else {return false;}
 	return true;

@@ -199,7 +199,7 @@ void VerletUpdate(
 			std::vector<pts3doubles> * masscache2,
 			std::vector<pts3doubles> * poscache1,
 			std::vector<pts3doubles> * poscache2,
-			double dt, double epssqd)
+			double dt, double epssqd, bool firstStep)
 {
 	int pgrp, ii, jj, nextRank, prevRank;
 	TempPoint accelSaved;
@@ -219,7 +219,6 @@ void VerletUpdate(
 		
 		if(pgrp > 0) { //only send/receive after the first step where everyone calculated within their group
 			
-    
       //nonblocking send/receives
 			MPI_Isend(&((*masscache1)[0]), masscache1->size(), MPI_DOUBLE, nextRank, MPI_MESSAGE_TAG_POSITIONS, MPI_COMM_WORLD, &sendreqM);
       MPI_Irecv(&((*masscache2)[0]), masscache2->size(), MPI_DOUBLE, prevRank, MPI_MESSAGE_TAG_POSITIONS, MPI_COMM_WORLD, &recvreqM);
@@ -245,40 +244,49 @@ void VerletUpdate(
 		#pragma omp for schedule(dynamic) nowait
 		#endif
 		for(ii=0; ii<NumLocalParticles; ii++) {  //for particles this proc manages
-			
-    
       accelSaved.zero();
-			if(pgrp == 0) {
+			if(pgrp == 0) { //initialize accumulated acceleration to zero at the beginning
         (*positionsCC)[ii*3] = (*positionsCC)[ii*3+1] = (*positionsCC)[ii*3+2] = 0.0;
       }
       for(jj=0; jj<NumCachedParticles; jj++) {  //for other particles (which may or may not include its own group)
-				//if(pgrp != 0 || ii != jj) {  //not skipping means a few less indices to worry about; also self-interaction will be zero (won't explode due to epssqd)
-					posdiff[0] = (*poscache1)[jj*3  ] - (*positionsBB)[ii*3  ];
+				  posdiff[0] = (*poscache1)[jj*3  ] - (*positionsBB)[ii*3  ];
   				posdiff[1] = (*poscache1)[jj*3+1] - (*positionsBB)[ii*3+1];
     			posdiff[2] = (*poscache1)[jj*3+2] - (*positionsBB)[ii*3+2];
 					temp = posdiff.length();
 					accelSaved += ((posdiff*(*masscache1)[jj]) / (temp*temp*temp + epssqd));
-				//}
 			}
 			(*positionsCC)[ii*3  ] += accelSaved[0]; //sum accelerations in positionsCC for now
 			(*positionsCC)[ii*3+1] += accelSaved[1]; // accelSaved is lost outside the loop
-			(*positionsCC)[ii*3+2] += accelSaved[2];
-      
+			(*positionsCC)[ii*3+2] += accelSaved[2];  
 		}
 	}
   
 	//After summing pairwise interactions, finish up (note: the accelerations need to be multiplied by Newtons Gravity Constant; they haven't yet)
 	
-	#ifdef USE_OMP
-	//omp_set_num_threads(4);
-	#pragma omp parallel shared (positionsAA, positionsBB, positionsCC, /*dtgscalar,*/ NumLocalParticles) private(ii)
-	#pragma omp for schedule(dynamic) nowait
-	#endif
-	for(ii=0; ii<NumLocalParticles; ii++) {
-		(*positionsCC)[ii*3  ] = (*positionsBB)[ii*3  ]*2.0 - (*positionsAA)[ii*3  ] + (*positionsCC)[ii*3  ] * dtgscalar;
-		(*positionsCC)[ii*3+1] = (*positionsBB)[ii*3+1]*2.0 - (*positionsAA)[ii*3+1] + (*positionsCC)[ii*3+1] * dtgscalar;
-  	(*positionsCC)[ii*3+2] = (*positionsBB)[ii*3+2]*2.0 - (*positionsAA)[ii*3+2] + (*positionsCC)[ii*3+2] * dtgscalar;//dtgscalar == NEWTONS_GRAVITY_CONSTANT * dt * dt;
-	}
+  if(firstStep) {
+    //treat positionsAA as velocity
+  	#ifdef USE_OMP
+  	//omp_set_num_threads(4);
+  	#pragma omp parallel shared (positionsAA, positionsBB, positionsCC, /*dtgscalar,*/ NumLocalParticles) private(ii)
+  	#pragma omp for schedule(dynamic) nowait
+  	#endif
+  	for(ii=0; ii<NumLocalParticles; ii++) {
+  		(*positionsCC)[ii*3  ] = (*positionsBB)[ii*3  ] + (*positionsAA)[ii*3  ]*dt + 0.5*(*positionsCC)[ii*3  ]*dtgscalar;
+  		(*positionsCC)[ii*3+1] = (*positionsBB)[ii*3+1] + (*positionsAA)[ii*3+1]*dt + 0.5*(*positionsCC)[ii*3+1]*dtgscalar;
+    	(*positionsCC)[ii*3+2] = (*positionsBB)[ii*3+2] + (*positionsAA)[ii*3+2]*dt + 0.5*(*positionsCC)[ii*3+2]*dtgscalar;
+  	}
+  } else {
+  	#ifdef USE_OMP
+  	//omp_set_num_threads(4);
+  	#pragma omp parallel shared (positionsAA, positionsBB, positionsCC, /*dtgscalar,*/ NumLocalParticles) private(ii)
+  	#pragma omp for schedule(dynamic) nowait
+  	#endif
+  	for(ii=0; ii<NumLocalParticles; ii++) {
+  		(*positionsCC)[ii*3  ] = (*positionsBB)[ii*3  ]*2.0 - (*positionsAA)[ii*3  ] + (*positionsCC)[ii*3  ] * dtgscalar;
+  		(*positionsCC)[ii*3+1] = (*positionsBB)[ii*3+1]*2.0 - (*positionsAA)[ii*3+1] + (*positionsCC)[ii*3+1] * dtgscalar;
+    	(*positionsCC)[ii*3+2] = (*positionsBB)[ii*3+2]*2.0 - (*positionsAA)[ii*3+2] + (*positionsCC)[ii*3+2] * dtgscalar;//dtgscalar == NEWTONS_GRAVITY_CONSTANT * dt * dt;
+  	}
+  }
   
   if(mpi_numCacheGroups > 1) {
     //Now share the cache within the group; this will overwrite poscache1 with the latest positions of the whole cache group
@@ -452,48 +460,23 @@ int main(int argc, char** argv)
 	std::vector<pts3doubles> poscache1(NumCachedParticles*3);
 	std::vector<pts3doubles> poscache2(NumCachedParticles*3);
   
-  //store this cache's initial positions in "poscache2", velocities in "poscache1"
-  readParticles(inputFile, masscache1, poscache2, poscache1);
+  //store this cache's initial positions in "poscache1", velocities in "poscache2"
+  readParticles(inputFile, masscache1, poscache1, poscache2);
   
+  //copy velocities into AA and positions into BB
   memcpy(&(positionsAA[0]), &(poscache2[mpi_myIndexWithinCache*NumLocalParticles*3]), DBLBYTES*NumLocalParticles*3);
+  memcpy(&(positionsBB[0]), &(poscache1[mpi_myIndexWithinCache*NumLocalParticles*3]), DBLBYTES*NumLocalParticles*3);
   
+  //we no longer need the info in poscache2 because we've saved local pieces in each node's AA
   
-	TempPoint accelSaved;
-	TempPoint posdiff;
-	double temp;
-  int ii, jj;
+  //do first step, using initial position & velocity, to get to position & position
+  VerletUpdate(&positionsAA, &positionsBB, &positionsCC, &masscache1, &masscache2, &poscache1, &poscache2, dt, epssqd, true);
   
-	#ifdef USE_OMP
-  cout<<"USING OPENMP PARALLELIZATION"<<endl;
-	//omp_set_num_threads(4);
-	#pragma omp parallel shared (masscache1, poscache1, poscache2, positionsAA, positionsBB, positionsCC, dt, epssqd) private(ii, jj, accelSaved, posdiff, temp)
-	#pragma omp for schedule(dynamic) nowait
-	#endif
-	for(int ii=0; ii<NumLocalParticles; ii++) {
-		accelSaved.zero();
-		for(jj=0; jj<NumCachedParticles; jj++) {
-			if(ii != jj) {
-				posdiff[0] = poscache2[jj*3  ] - poscache2[ii*3  ];
-				posdiff[1] = poscache2[jj*3+1] - poscache2[ii*3+1];
-  			posdiff[2] = poscache2[jj*3+2] - poscache2[ii*3+2];
-				temp = posdiff.length();
-				accelSaved += ((posdiff*masscache1[jj]) / (temp*temp*temp + epssqd));
-			}
-		}
-		positionsBB[ii*3  ] = positionsAA[ii*3  ] + poscache1[ii*3  ]*dt + accelSaved[0]*0.5*NEWTONS_GRAVITY_CONSTANT*dt*dt;
-		positionsBB[ii*3+1] = positionsAA[ii*3+1] + poscache1[ii*3+1]*dt + accelSaved[1]*0.5*NEWTONS_GRAVITY_CONSTANT*dt*dt;
-		positionsBB[ii*3+2] = positionsAA[ii*3+2] + poscache1[ii*3+2]*dt + accelSaved[2]*0.5*NEWTONS_GRAVITY_CONSTANT*dt*dt;
-	}
+  //from here, we just need to continue as if BB is the past step and CC is the current step;
+  //and poscache1 contains current step info (all CC's aggregated)
   
+	int bidx = 1; //as described just above, we need to go straight to case 1 in the loop below
   
-  
-  if(mpi_numCacheGroups > 1) {
-    //Now share the cache within the group; this will overwrite poscache1 with the latest positions of the whole cache group
-    ShareLocalPositionsWithCacheGroup(&positionsBB, &poscache1);  
-    MPI_Barrier(MPI_COMM_WORLD);
-  } else {
-    memcpy(&(poscache1[0]), &(positionsBB[0]), DBLBYTES*NumLocalParticles*3);
-  }
   
 	//create output file
 	FILE * outputFile = fopen(fileToSaveTo.c_str(), "w");
@@ -511,17 +494,16 @@ int main(int argc, char** argv)
 	fwrite(&NOWRITETHIS, 4, 1, outputFile);
   
 	//write the first two timesteps
-	writeParticles(outputFile, positionsAA);
 	writeParticles(outputFile, positionsBB);
+	writeParticles(outputFile, positionsCC);
   
-	int bidx = 0;
 	for(int step=0; step<nsteps; step+=nburst) {
 		for(int burst=0; burst<nburst; burst++) {
 			switch(bidx) {
 				//new will become current and current will become old
-				case 0: VerletUpdate(&positionsAA, &positionsBB, &positionsCC, &masscache1, &masscache2, &poscache1, &poscache2, dt, epssqd); break;
-				case 1: VerletUpdate(&positionsBB, &positionsCC, &positionsAA, &masscache1, &masscache2, &poscache1, &poscache2, dt, epssqd); break;
-				case 2: VerletUpdate(&positionsCC, &positionsAA, &positionsBB, &masscache1, &masscache2, &poscache1, &poscache2, dt, epssqd); break;
+				case 0: VerletUpdate(&positionsAA, &positionsBB, &positionsCC, &masscache1, &masscache2, &poscache1, &poscache2, dt, epssqd, false); break;
+				case 1: VerletUpdate(&positionsBB, &positionsCC, &positionsAA, &masscache1, &masscache2, &poscache1, &poscache2, dt, epssqd, false); break;
+				case 2: VerletUpdate(&positionsCC, &positionsAA, &positionsBB, &masscache1, &masscache2, &poscache1, &poscache2, dt, epssqd, false); break;
 			}
 			bidx = (bidx+1) % 3;
 		}

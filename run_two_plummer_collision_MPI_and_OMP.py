@@ -26,12 +26,18 @@ numMPIprocs = str( 6 )
 numMPImemgrps = str( 2 ) #will be forced to be 2
 nburstburst = str( 3 )
 
-createNewInitialConditions = True
+createNewInitialConditions = False
 
 MakePositionsVideo = False
 UseImageMagickForFancierVideo = False
 
 #=================================================================================
+
+try:
+    os.system('rm NBodySim_CPU_MPI/nbodycpumpi')
+except:
+    print("executable already deleted")
+
 
 print("compiling C++ code...")
 os.system("(cd NBodySim_CPU_MPI && make)")
@@ -40,7 +46,7 @@ if createNewInitialConditions:
     assert(numMPImemgrps == '2' or numMPImemgrps == '1')   
     
     timeStep = 0.15
-    timeMax = 30.0
+    timeMax = 4.0
     epssqd = 0.1
     AarsethHeader = str(TotalNumPts)+" 0.01 "+str(timeStep)+" "+str(timeMax)+" "+str(epssqd)+" "+str(GravitationalConst)+"\n"
     
@@ -49,13 +55,13 @@ if createNewInitialConditions:
     galaxy1.R = 1.0
     galaxy1.ZeroVelocities_Bool = False
     galaxy1.GenerateInitialConditions(-4, -4, 0)
-    
+
     galaxy2 = PlummerGalaxy()
     galaxy2.npts = (TotalNumPts/2)
     galaxy2.R = 1.0
     galaxy2.ZeroVelocities_Bool = False
     galaxy2.GenerateInitialConditions(4, 4, 0)
-    
+
     if numMPImemgrps == '2':
         galaxy1.WriteInitialConditionsToFile(InitialConditionsFolder+"two_plummers_collision_0.data", AarsethHeader)
         galaxy2.WriteInitialConditionsToFile(InitialConditionsFolder+"two_plummers_collision_1.data", AarsethHeader)
@@ -72,6 +78,10 @@ if createNewInitialConditions:
 print("Running compiled MPI/OpenMP C++ nbody code on two-Plummer-collision initial conditions files")
 os.system('mpirun -np '+numMPIprocs+' ./NBodySim_CPU_MPI/nbodycpumpi '+numMPImemgrps+' '+nburstburst+' '+InitialConditionsFolder+'two_plummers_collision_ '+OutputResultsFolder+'out_mpi_twocollisions_')
 	
+
+if True:
+    print("launching renderer...")
+    os.system("Renderer3D/Renderer3D "+OutputResultsFolder+"out_mpi_twocollisions_.data "+str(TotalNumPts/2)+" 0 1 1")
 
 
 if matplotlibAvailable and (MakePositionsVideo or MakeDistributionsVideo):

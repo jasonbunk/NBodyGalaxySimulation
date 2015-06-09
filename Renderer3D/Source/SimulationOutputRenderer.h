@@ -4,32 +4,30 @@
 #include "SimulationSystem.h"
 #include <fstream>
 #include <string>
+#include <vector>
 
 
 class SimulationOutputRenderer : public SimulationSystem
 {
-	FILE* dataFile;
-	int numParticlesPerStep;
-    
+	std::vector<FILE*> dataFiles;
 	int framesSoFar;
 	bool drawNextStep;
-	std::vector<phys::vec3> lastDrawnStars;
+	std::vector<std::pair<int,phys::vec3>> lastDrawnStars;
 	double time_accumulated_since_last_draw;
 	double time_step_between_draws;
 	
 public:
-	bool drawtwocolors;
+	int numParticlesPerStep;
 	
-	SimulationOutputRenderer() : SimulationSystem(), dataFile(NULL),
-													drawNextStep(true),
-													drawtwocolors(false),
+	
+	SimulationOutputRenderer() : SimulationSystem(), drawNextStep(true),
 													framesSoFar(0),
 													numParticlesPerStep(1),
 													time_accumulated_since_last_draw(0.0),
 													time_step_between_draws(0.1) {}
-	~SimulationOutputRenderer() {if(dataFile != NULL){fclose(dataFile); dataFile = NULL;}}
+	~SimulationOutputRenderer();
 	
-	void OpenDataFile(std::string filename);
+	bool OpenDataFile(std::string filename);
 	
 	virtual int GetNumFramesDraw() {return framesSoFar;}
 	virtual void UpdateSystemStuff_EachPhysicsStep(double frametime);
