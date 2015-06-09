@@ -3,7 +3,7 @@ import math
 import numpy as np
 from PlummerGalaxy import PlummerGalaxy
 from InitialConditions import InitialConditions
-from plot_or_make_video import MakeVideo
+'''from plot_or_make_video import MakeVideo
 import imp
 try:
     imp.find_module('matplotlib')
@@ -11,9 +11,9 @@ try:
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
 except ImportError:
-    matplotlibAvailable = False
+    matplotlibAvailable = False'''
 
-if len(sys.argv) <= 1:
+if len(sys.argv) < 6:
 	print("usage:  {prefix}  {total num pts}  {numMPIprocs}  {numCacheGrps}  {Nburst}")
 if len(sys.argv) >= 6:
 	preffix=sys.argv[1]
@@ -28,6 +28,7 @@ else:
 	numMPIprocs = str( 6 )
 	numMPImemgrps = str( 2 ) #will be forced to be 2
 	nburstburst = str( 3 )
+	print("QUITTING: PLEASE PROVIDE PROPER ARGS")
 	quit()
 
 GravitationalConst = 1.0
@@ -95,7 +96,7 @@ os.system('mpirun -np '+numMPIprocs+' ./NBodySim_CPU_MPI/nbodycpumpi '+numMPImem
 
 endtime = time.time()
 
-print("that took "+ (starttime - endtime)+" seconds")
+print("that took "+ (endtime - starttime)+" seconds")
 
 '''
 if True:
