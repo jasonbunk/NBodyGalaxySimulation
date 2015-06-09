@@ -14,10 +14,8 @@
 cd $PBS_O_WORKDIR
 echo currentworkdir= $PBS_O_WORKDIR
 
-python run_two_plummer_collision_MPI_and_OMP.py test1 2400 1 1 3
-python run_two_plummer_collision_MPI_and_OMP.py test1 2400 1 2 3
-python run_two_plummer_collision_MPI_and_OMP.py test1 2400 2 2 3
-python run_two_plummer_collision_MPI_and_OMP.py test1 2400 3 2 3
-python run_two_plummer_collision_MPI_and_OMP.py test1 2400 4 2 3
-
+mpirun -np 1 ./NBodySim_CPU_MPI/nbodycpumpi 1 3 data/initialconditions/t2400p_1c_1m_ data/results/t2400p_1c_1m_
+mpirun -np 2 ./NBodySim_CPU_MPI/nbodycpumpi 2 3 data/initialconditions/t2400p_2c_2m_ data/results/t2400p_2c_2m_
+mpirun -np 3 ./NBodySim_CPU_MPI/nbodycpumpi 3 3 data/initialconditions/t2400p_2c_4m_ data/results/t2400p_2c_4m_
+mpirun -np 4 ./NBodySim_CPU_MPI/nbodycpumpi 4 3 data/initialconditions/t2400p_1c_4m_ data/results/t2400p_1c_4m_
 
