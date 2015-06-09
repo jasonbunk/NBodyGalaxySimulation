@@ -43,6 +43,10 @@ static int NumCachedParticles; //cached, usually shared by a few procs
 static int NumLocalParticles; //for which this MPI proc updates positions
 
 
+#define PROFILE_ME_PLEASE 1
+static double total_MPI_time = 0.0;
+
+
 #ifdef USE_OMP
 #include <omp.h>
 #endif
@@ -218,7 +222,11 @@ void VerletUpdate(
 	for(pgrp=0; pgrp<mpi_numCacheGroups; pgrp++) {
 		
 		if(pgrp > 0) { //only send/receive after the first step where everyone calculated within their group
-			
+
+#if PROFILE_ME_PLEASE
+double startttime = MPI_Wtime();
+#endif
+
       //nonblocking send/receives
 			MPI_Isend(&((*masscache1)[0]), masscache1->size(), MPI_DOUBLE, nextRank, MPI_MESSAGE_TAG_POSITIONS, MPI_COMM_WORLD, &sendreqM);
       MPI_Irecv(&((*masscache2)[0]), masscache2->size(), MPI_DOUBLE, prevRank, MPI_MESSAGE_TAG_POSITIONS, MPI_COMM_WORLD, &recvreqM);
@@ -230,6 +238,10 @@ void VerletUpdate(
       MPI_Wait(&recvreqP, &recvstatus);
       MPI_Wait(&sendreqP, &sendstatus);
       
+#if PROFILE_ME_PLEASE
+double enddtime = MPI_Wtime();
+total_MPI_time += (enddtime - startttime);
+#endif
 			tempptrswap = poscache1;
 			poscache1 = poscache2; //swap, so that next time, what was received will be sent,
 			poscache2 = tempptrswap; //so that positions go around the ring
@@ -289,9 +301,20 @@ void VerletUpdate(
   }
   
   if(mpi_numCacheGroups > 1) {
+
+#if PROFILE_ME_PLEASE
+double startttime22 = MPI_Wtime();
+#endif
+
     //Now share the cache within the group; this will overwrite poscache1 with the latest positions of the whole cache group
     ShareLocalPositionsWithCacheGroup(positionsCC, poscache1);  
     MPI_Barrier(MPI_COMM_WORLD);
+
+#if PROFILE_ME_PLEASE
+double enddtime22 = MPI_Wtime();
+total_MPI_time += (enddtime22 - startttime22);
+#endif
+
   } else {
     memcpy(&((*poscache1)[0]), &((*positionsCC)[0]), DBLBYTES*NumLocalParticles*3);
   }
@@ -448,7 +471,11 @@ int main(int argc, char** argv)
   cout<<"mpi_size == "<<mpi_size<<", NumCachedParticles "<<NumCachedParticles<<" NumLocalParticles "<<NumLocalParticles<<", GlobalNumParticles "<<GlobalNumParticles<<endl;
   cout<<endl;
   
-  
+
+#if PROFILE_ME_PLEASE
+double startttime33 = MPI_Wtime();
+#endif
+
   /*
     Allocate lots of memory
   */
@@ -516,6 +543,12 @@ int main(int argc, char** argv)
 		}
     
 		cout<<"simulation time elapsed: "<<(dt*((float)nburst)*((float)(1+(step/nburst))))<<endl;
+
+#if PROFILE_ME_PLEASE
+double enddtime33 = MPI_Wtime();
+cout << "MPI time: " << (enddtime33 - startttime33) << endl;
+#endif
+
 	}
 
 	fclose(outputFile);
