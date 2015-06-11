@@ -4,6 +4,9 @@ aarseth
 nbodyocl
 #ignore compiled nbodycpp code
 nbodycpp
+#ignore compiled MPI code
+nbodycpumpi
+NBodySim_CPU_MPI/nbodycpumpi
 
 #ignore compiled Python files
 *.pyc
@@ -25,3 +28,4 @@ nbodycpp
 *.depend
 #ignore renderer executable
 Renderer3D
+
