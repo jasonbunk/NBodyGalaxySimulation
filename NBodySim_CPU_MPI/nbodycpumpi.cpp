@@ -453,7 +453,7 @@ int main(int argc, char** argv)
 	double dt, epssqd;
 	double finalTimeGiven;
 	readParameters(inputFile, &GlobalNumParticles, &dt, &finalTimeGiven, &epssqd);
-	finalTimeGiven *= 0.25; //HACK HACK HACK HACK HACK HACK TO SPEED UP TESTS; should do 2.5 seconds sim time (25 time steps) which is like 15 seconds on Gordon
+	finalTimeGiven *= 0.5; //HACK HACK HACK HACK HACK HACK TO SPEED UP TESTS; should do 5 seconds sim time (50 time steps) which is like 30 seconds on Gordon
 	dt /= double(nburst);
 	int nsteps = RoundDoubleToInt(finalTimeGiven / ((double)dt));
 	
