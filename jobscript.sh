@@ -11,11 +11,32 @@
 #PBS -V
 # Start of user commands - comments start with a hash sign (#)
 
-cd $PBS_O_WORKDIR
-echo currentworkdir= $PBS_O_WORKDIR
+#cd $PBS_O_WORKDIR
+#echo currentworkdir= $PBS_O_WORKDIR
 
-mpirun -np 1 ./NBodySim_CPU_MPI/nbodycpumpi 1 3 data/initialconditions/t2400p_1c_1m_ data/results/t2400p_1c_1m_
-mpirun -np 2 ./NBodySim_CPU_MPI/nbodycpumpi 2 3 data/initialconditions/t2400p_2c_2m_ data/results/t2400p_2c_2m_
-mpirun -np 3 ./NBodySim_CPU_MPI/nbodycpumpi 3 3 data/initialconditions/t2400p_2c_4m_ data/results/t2400p_2c_4m_
-mpirun -np 4 ./NBodySim_CPU_MPI/nbodycpumpi 4 3 data/initialconditions/t2400p_1c_4m_ data/results/t2400p_1c_4m_
+(cd NBodySim_CPU_MPI && make)
+
+mpirun -np 1 ./NBodySim_CPU_MPI/nbodycpumpi 1 3 data/initialconditions/2400pt_1cg_100tsteps_ data/results/2400pt_1cg_100tsteps_1mpi_
+mpirun -np 2 ./NBodySim_CPU_MPI/nbodycpumpi 1 3 data/initialconditions/2400pt_1cg_100tsteps_ data/results/2400pt_1cg_100tsteps_2mpi_
+mpirun -np 4 ./NBodySim_CPU_MPI/nbodycpumpi 1 3 data/initialconditions/2400pt_1cg_100tsteps_ data/results/2400pt_1cg_100tsteps_4mpi_
+
+mpirun -np 2 ./NBodySim_CPU_MPI/nbodycpumpi 2 3 data/initialconditions/2400pt_2cg_100tsteps_ data/results/2400pt_2cg_100tsteps_2mpi_
+mpirun -np 4 ./NBodySim_CPU_MPI/nbodycpumpi 2 3 data/initialconditions/2400pt_2cg_100tsteps_ data/results/2400pt_2cg_100tsteps_4mpi_
+
+mpirun -np 1 ./NBodySim_CPU_MPI/nbodycpumpi 1 3 data/initialconditions/4800pt_1cg_100tsteps_ data/results/4800pt_1cg_100tsteps_1mpi_
+mpirun -np 2 ./NBodySim_CPU_MPI/nbodycpumpi 1 3 data/initialconditions/4800pt_1cg_100tsteps_ data/results/4800pt_1cg_100tsteps_2mpi_
+mpirun -np 4 ./NBodySim_CPU_MPI/nbodycpumpi 1 3 data/initialconditions/4800pt_1cg_100tsteps_ data/results/4800pt_1cg_100tsteps_4mpi_
+
+mpirun -np 2 ./NBodySim_CPU_MPI/nbodycpumpi 2 3 data/initialconditions/4800pt_2cg_100tsteps_ data/results/4800pt_2cg_100tsteps_2mpi_
+mpirun -np 4 ./NBodySim_CPU_MPI/nbodycpumpi 2 3 data/initialconditions/4800pt_2cg_100tsteps_ data/results/4800pt_2cg_100tsteps_4mpi_
+
+mpirun -np 1 ./NBodySim_CPU_MPI/nbodycpumpi 1 3 data/initialconditions/7200pt_1cg_100tsteps_ data/results/7200pt_1cg_100tsteps_1mpi_
+mpirun -np 2 ./NBodySim_CPU_MPI/nbodycpumpi 1 3 data/initialconditions/7200pt_1cg_100tsteps_ data/results/7200pt_1cg_100tsteps_2mpi_
+mpirun -np 4 ./NBodySim_CPU_MPI/nbodycpumpi 1 3 data/initialconditions/7200pt_1cg_100tsteps_ data/results/7200pt_1cg_100tsteps_4mpi_
+
+mpirun -np 2 ./NBodySim_CPU_MPI/nbodycpumpi 2 3 data/initialconditions/7200pt_2cg_100tsteps_ data/results/7200pt_2cg_100tsteps_2mpi_
+mpirun -np 4 ./NBodySim_CPU_MPI/nbodycpumpi 2 3 data/initialconditions/7200pt_2cg_100tsteps_ data/results/7200pt_2cg_100tsteps_4mpi_
+
+
+
 

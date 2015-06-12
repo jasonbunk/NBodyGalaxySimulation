@@ -60,9 +60,9 @@ os.system("(cd NBodySim_CPU_MPI && make)")
 if createNewInitialConditions:
     assert(numMPImemgrps == '2' or numMPImemgrps == '1')   
     
-    timeStep = 0.15
-    timeMax = 4.0
-    epssqd = 0.1
+    timeStep = 0.1
+    timeMax = 10.0
+    epssqd = 0.05
     AarsethHeader = str(TotalNumPts)+" 0.01 "+str(timeStep)+" "+str(timeMax)+" "+str(epssqd)+" "+str(GravitationalConst)+"\n"
     
     galaxy1 = PlummerGalaxy()
@@ -86,9 +86,12 @@ if createNewInitialConditions:
         bothGalaxies.extend(galaxy2)
         AarsethHeader = str(TotalNumPts)+" 0.01 "+str(timeStep)+" "+str(timeMax)+" "+str(epssqd)+" "+str(GravitationalConst)+"\n"
         bothGalaxies.WriteInitialConditionsToFile(InitialConditionsFolder+preffix+"0.data", AarsethHeader)
-	
-        
+    
+    quit()
+
 #args: {NumDataSplits}  {nburst-between-disksaves}  {InitialConditionsFilename-Prefix}  {OutputFilename-Prefix}
+
+
 
 print("Running compiled MPI/OpenMP C++ nbody code on two-Plummer-collision initial conditions files")
 os.system('mpirun -np '+numMPIprocs+' ./NBodySim_CPU_MPI/nbodycpumpi '+numMPImemgrps+' '+nburstburst+' '+InitialConditionsFolder+preffix+' '+OutputResultsFolder+preffix)

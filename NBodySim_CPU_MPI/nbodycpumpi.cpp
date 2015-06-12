@@ -37,7 +37,9 @@ static int mpi_nextRank; //next in the ring, usually +1 except the last group fo
 static int mpi_prevRank; //previous in the ring
 static int mpi_myrank; //global index, from which cache-relative indices are calculated
 static int mpi_size; //number of global MPI processes
-#define MPI_MESSAGE_TAG_POSITIONS 1
+#define MPI_MESSAGE_TAG_POSITIONS 11
+#define MPI_MESSAGE_TAG_MASSES 12
+#define MPI_MESSAGE_TAG_POSITION_WITHIN_CACHES 13
 static int GlobalNumParticles; //in the universe; given by each initial conditions file's header
 static int NumCachedParticles; //cached, usually shared by a few procs
 static int NumLocalParticles; //for which this MPI proc updates positions
@@ -183,8 +185,8 @@ void ShareLocalPositionsWithCacheGroup(std::vector<pts3doubles> * positionsCC, s
     if(ii == mpi_myIndexWithinCache) {
       memcpy(&((*poscache1)[mpi_myIndexWithinCache*NumLocalParticles*3]), &((*positionsCC)[0]), DBLBYTES*NumLocalParticles*3);
     } else {  
-      MPI_Isend(&((*positionsCC)[0]), NumLocalParticles*3, MPI_DOUBLE, nextRank, MPI_MESSAGE_TAG_POSITIONS, MPI_COMM_WORLD, &allSendRequests[reqidx]);
-      MPI_Irecv(&((*poscache1)[ii*NumLocalParticles*3]), NumLocalParticles*3, MPI_DOUBLE, prevRank, MPI_MESSAGE_TAG_POSITIONS, MPI_COMM_WORLD, &allRecvRequests[reqidx]);
+      MPI_Isend(&((*positionsCC)[0]), NumLocalParticles*3, MPI_DOUBLE, nextRank, MPI_MESSAGE_TAG_POSITION_WITHIN_CACHES, MPI_COMM_WORLD, &allSendRequests[reqidx]);
+      MPI_Irecv(&((*poscache1)[ii*NumLocalParticles*3]), NumLocalParticles*3, MPI_DOUBLE, prevRank, MPI_MESSAGE_TAG_POSITION_WITHIN_CACHES, MPI_COMM_WORLD, &allRecvRequests[reqidx]);
       nextRank = AdvanceRankWithinCache(nextRank);
       prevRank = ReduceRankWithinCache(prevRank);
       reqidx++;
@@ -228,8 +230,8 @@ double startttime = MPI_Wtime();
 #endif
 
       //nonblocking send/receives
-			MPI_Isend(&((*masscache1)[0]), masscache1->size(), MPI_DOUBLE, nextRank, MPI_MESSAGE_TAG_POSITIONS, MPI_COMM_WORLD, &sendreqM);
-      MPI_Irecv(&((*masscache2)[0]), masscache2->size(), MPI_DOUBLE, prevRank, MPI_MESSAGE_TAG_POSITIONS, MPI_COMM_WORLD, &recvreqM);
+			MPI_Isend(&((*masscache1)[0]), masscache1->size(), MPI_DOUBLE, nextRank, MPI_MESSAGE_TAG_MASSES, MPI_COMM_WORLD, &sendreqM);
+      MPI_Irecv(&((*masscache2)[0]), masscache2->size(), MPI_DOUBLE, prevRank, MPI_MESSAGE_TAG_MASSES, MPI_COMM_WORLD, &recvreqM);
       MPI_Isend(&((*poscache1)[0]), poscache1->size(), MPI_DOUBLE, nextRank, MPI_MESSAGE_TAG_POSITIONS, MPI_COMM_WORLD, &sendreqP);
 			MPI_Irecv(&((*poscache2)[0]), poscache2->size(), MPI_DOUBLE, prevRank, MPI_MESSAGE_TAG_POSITIONS, MPI_COMM_WORLD, &recvreqP);
       
@@ -300,7 +302,7 @@ total_MPI_time += (enddtime - startttime);
   	}
   }
   
-  if(mpi_numCacheGroups > 1) {
+  if(mpi_size > 1) {  //mpi_numCacheGroups > 1) {
 
 #if PROFILE_ME_PLEASE
 double startttime22 = MPI_Wtime();
@@ -546,7 +548,7 @@ double startttime33 = MPI_Wtime();
 
 #if PROFILE_ME_PLEASE
 double enddtime33 = MPI_Wtime();
-cout << "MPI time: " << (enddtime33 - startttime33) << endl;
+cout << "MPI time: " << total_MPI_time << " / " << (enddtime33 - startttime33) << " == " << (total_MPI_time/(enddtime33 - startttime33)) << endl;
 #endif
 
 	}
