@@ -182,6 +182,8 @@ void ShareLocalPositionsWithCacheGroup(std::vector<pts3doubles> * positionsCC, s
   int nextRank = AdvanceRankWithinCache(mpi_myrank);
   int prevRank = ReduceRankWithinCache(mpi_myrank);
   
+  cout<<mpi_myrank<<"beginning ShareLocalPositionsWithCacheGroup"<<endl;
+  
   for(int ii=0; ii<mpi_numRanksWithinACache; ii++) {
     if(ii == mpi_myIndexWithinCache) {
       memcpy(&((*poscache1)[mpi_myIndexWithinCache*NumLocalParticles*3]), &((*positionsCC)[0]), DBLBYTES*NumLocalParticles*3);
@@ -193,8 +195,10 @@ void ShareLocalPositionsWithCacheGroup(std::vector<pts3doubles> * positionsCC, s
       reqidx++;
     }
   }
+  cout<<mpi_myrank<<"beginning MPI_Waitall"<<endl;
   MPI_Waitall(reqidx, &(allSendRequests[0]), &sendstatus);
   MPI_Waitall(reqidx, &(allRecvRequests[0]), &recvstatus);
+  cout<<mpi_myrank<<"finished MPI_waitall"<<endl;
 }
 
 
@@ -281,7 +285,7 @@ total_MPI_time += (enddtime - startttime);
   if(firstStep) {
     //treat positionsAA as velocity
   	#ifdef USE_OMP
-	cout<<"using openmp, max "<<omp_get_max_threads()<<" threads, on "<<omp_get_num_procs()<<" processors"<<endl;
+	cout<<mpi_myrank<<" using openmp, max "<<omp_get_max_threads()<<" threads, on "<<omp_get_num_procs()<<" processors"<<endl;
   	//omp_set_num_threads(4);
   	#pragma omp parallel shared (positionsAA, positionsBB, positionsCC, /*dtgscalar,*/ NumLocalParticles) private(ii)
   	#pragma omp for schedule(dynamic) nowait
@@ -312,7 +316,7 @@ double startttime22 = MPI_Wtime();
 
     //Now share the cache within the group; this will overwrite poscache1 with the latest positions of the whole cache group
     ShareLocalPositionsWithCacheGroup(positionsCC, poscache1);  
-    MPI_Barrier(MPI_COMM_WORLD);
+    //MPI_Barrier(MPI_COMM_WORLD);
 
 #if PROFILE_ME_PLEASE
 double enddtime22 = MPI_Wtime();
