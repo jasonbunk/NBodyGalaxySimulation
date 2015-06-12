@@ -1,10 +1,10 @@
 #!/bin/bash
 #PBS -q normal
 #PBS -l nodes=2:ppn=16:native
-#PBS -l walltime=0:20:00
+#PBS -l walltime=0:02:00
 #PBS -N gravitystrongscaling
-#PBS -o my.out
-#PBS -e my.err
+#PBS -o my22.out
+#PBS -e my22.err
 #PBS -A csd453
 #PBS -M jason.bunk@gmail.com
 #PBS -m abe
