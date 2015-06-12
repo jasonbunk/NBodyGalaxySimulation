@@ -37,9 +37,11 @@ static int mpi_nextRank; //next in the ring, usually +1 except the last group fo
 static int mpi_prevRank; //previous in the ring
 static int mpi_myrank; //global index, from which cache-relative indices are calculated
 static int mpi_size; //number of global MPI processes
+
 #define MPI_MESSAGE_TAG_POSITIONS 11
 #define MPI_MESSAGE_TAG_MASSES 12
 #define MPI_MESSAGE_TAG_POSITION_WITHIN_CACHES 13
+
 static int GlobalNumParticles; //in the universe; given by each initial conditions file's header
 static int NumCachedParticles; //cached, usually shared by a few procs
 static int NumLocalParticles; //for which this MPI proc updates positions
@@ -101,7 +103,7 @@ int AdvanceRankWithinCache(int mpirank) {
 }
 int ReduceRankWithinCache(int mpirank) {
   int returnme = mpirank - 1;
-  if(returnme % mpi_numRanksWithinACache == (mpi_numRanksWithinACache-1)) {
+  if(returnme < 0 || returnme % mpi_numRanksWithinACache == (mpi_numRanksWithinACache-1)) {
     returnme += mpi_numRanksWithinACache;
   }
   return returnme;
@@ -182,7 +184,7 @@ void ShareLocalPositionsWithCacheGroup(std::vector<pts3doubles> * positionsCC, s
   int nextRank = AdvanceRankWithinCache(mpi_myrank);
   int prevRank = ReduceRankWithinCache(mpi_myrank);
   
-  cout<<mpi_myrank<<"beginning ShareLocalPositionsWithCacheGroup"<<endl;
+  cout<<mpi_myrank<<"beginning ShareLocalPositionsWithCacheGroup, nextRank is "<<nextRank<<", prevRank is "<<prevRank<<endl;
   
   for(int ii=0; ii<mpi_numRanksWithinACache; ii++) {
     if(ii == mpi_myIndexWithinCache) {
@@ -478,6 +480,7 @@ int main(int argc, char** argv)
   cout<<endl;
 	cout<<"mpi_myrank == "<<mpi_myrank<<", my cache num == "<<mpi_myCacheNumber<<", mpi_myIndexWithinCache ==  "<<mpi_myIndexWithinCache<<endl;
   cout<<"mpi_size == "<<mpi_size<<", NumCachedParticles "<<NumCachedParticles<<" NumLocalParticles "<<NumLocalParticles<<", GlobalNumParticles "<<GlobalNumParticles<<endl;
+  cout<<"mpi_numRanksWithinACache == "<<mpi_numRanksWithinACache<<", mpi_numCacheGroups == "<<mpi_numCacheGroups<<endl;
   cout<<endl;
   
 

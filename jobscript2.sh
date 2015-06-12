@@ -16,7 +16,7 @@ echo currentworkdir= $PBS_O_WORKDIR
 
 (cd NBodySim_CPU_MPI && make)
 
-mpirun -np 1 ./NBodySim_CPU_MPI/nbodycpumpi 1 3 data/initialconditions/2400pt_1cg_100tsteps_ data/results/2400pt_1cg_100tsteps_1mpi_
+#mpirun -np 1 ./NBodySim_CPU_MPI/nbodycpumpi 1 3 data/initialconditions/2400pt_1cg_100tsteps_ data/results/2400pt_1cg_100tsteps_1mpi_
 mpirun -np 2 ./NBodySim_CPU_MPI/nbodycpumpi 1 3 data/initialconditions/2400pt_1cg_100tsteps_ data/results/2400pt_1cg_100tsteps_2mpi_
 #mpirun -np 4 ./NBodySim_CPU_MPI/nbodycpumpi 1 3 data/initialconditions/2400pt_1cg_100tsteps_ data/results/2400pt_1cg_100tsteps_4mpi_
 
