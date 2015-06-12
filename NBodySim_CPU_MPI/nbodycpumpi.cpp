@@ -174,6 +174,9 @@ public:
 typedef double pts3doubles;
 
 
+/*===========================================================================================================
+	At the end of an iteration step, share positions with the rest of the nodes, especially those in my cache group
+*/
 void ShareLocalPositionsWithCacheGroup(std::vector<pts3doubles> * positionsCC, std::vector<pts3doubles> * poscache1) {
   
   MPI_Status recvstatus, sendstatus;
@@ -184,7 +187,7 @@ void ShareLocalPositionsWithCacheGroup(std::vector<pts3doubles> * positionsCC, s
   int nextRank = AdvanceRankWithinCache(mpi_myrank);
   int prevRank = ReduceRankWithinCache(mpi_myrank);
   
-  cout<<mpi_myrank<<"beginning ShareLocalPositionsWithCacheGroup, nextRank is "<<nextRank<<", prevRank is "<<prevRank<<endl;
+  //cout<<mpi_myrank<<"beginning ShareLocalPositionsWithCacheGroup, nextRank is "<<nextRank<<", prevRank is "<<prevRank<<endl;
   
   for(int ii=0; ii<mpi_numRanksWithinACache; ii++) {
     if(ii == mpi_myIndexWithinCache) {
@@ -197,12 +200,16 @@ void ShareLocalPositionsWithCacheGroup(std::vector<pts3doubles> * positionsCC, s
       reqidx++;
     }
   }
-  cout<<mpi_myrank<<"beginning MPI_Waitall"<<endl;
+  //cout<<mpi_myrank<<"beginning MPI_Waitall"<<endl;
   MPI_Waitall(reqidx, &(allSendRequests[0]), &sendstatus);
   MPI_Waitall(reqidx, &(allRecvRequests[0]), &recvstatus);
-  cout<<mpi_myrank<<"finished MPI_waitall"<<endl;
+  //cout<<mpi_myrank<<"finished MPI_waitall"<<endl;
 }
 
+
+/*===========================================================================================================
+	Main iteration update of one step of Verlet integration; includes OpenMP and MPI communications
+*/
 
 void VerletUpdate(
 			std::vector<pts3doubles> * positionsAA, // step n-1
