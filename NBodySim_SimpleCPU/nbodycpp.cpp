@@ -28,6 +28,12 @@
 #include <vector>
 using std::cout; using std::endl;
 
+#ifndef USE_OMP
+#define USE_OMP 1
+#endif
+
+static int num_omp_threads_desired = 1;
+
 #ifdef USE_OMP
 #include <omp.h>
 #endif
@@ -106,8 +112,8 @@ void VerletUpdate(std::vector<double> * masses,
 	double temp;
 
 #ifdef USE_OMP
-//omp_set_num_threads(4);	
-#pragma omp parallel shared (masses, positionsAA, positionsBB, positionsCC, dt, epssqd, nparticles) private(i, j, accelSaved, posdiff, temp)
+omp_set_num_threads(num_omp_threads_desired);	
+#pragma omp parallel shared (masses, positionsAA, positionsBB, positionsCC, NEWTONS_GRAVITY_CONSTANT, dt, epssqd, nparticles) private(i, j, accelSaved, posdiff, temp)
 #pragma omp for nowait
 #endif
 
@@ -117,10 +123,10 @@ void VerletUpdate(std::vector<double> * masses,
 			if(i != j) {
 				posdiff = (*positionsBB)[j] - (*positionsBB)[i];
 				temp = posdiff.length();
-				accelSaved += ((posdiff*NEWTONS_GRAVITY_CONSTANT*(*masses)[j]) / (temp*temp*temp + epssqd));
+				accelSaved += ((posdiff*(*masses)[j]) / (temp*temp*temp + epssqd));
 			}
 		}
-		(*positionsCC)[i] = (*positionsBB)[i]*2.0 - (*positionsAA)[i] + accelSaved*dt*dt;
+		(*positionsCC)[i] = (*positionsBB)[i]*2.0 - (*positionsAA)[i] + accelSaved*NEWTONS_GRAVITY_CONSTANT*dt*dt;
 	}
 
 }
@@ -204,10 +210,11 @@ int main(int argc, char** argv)
 	char fileToSaveTo[1024];
 	memset(fileToOpen,0,1024);
 	if(argc > 2) {
-		strcpy(fileToOpen, argv[1]);
-		strcpy(fileToSaveTo, argv[2]);
+		num_omp_threads_desired = atoi(argv[1]);
+		strcpy(fileToOpen, argv[2]);
+		strcpy(fileToSaveTo, argv[3]);
 	} else {
-		cout<<"Usage:  {InitialConditionsFilename}  {OutputFilename}"<<endl;
+		cout<<"Usage:  {num-omp-threads}  {InitialConditionsFilename}  {OutputFilename}"<<endl;
 		return 1;
 	}
 	FILE * inputFile = fopen(fileToOpen, "r");
@@ -216,7 +223,7 @@ int main(int argc, char** argv)
 		return 1;
 	}
 	
-	int nburst = 6;  // this is the number of steps before saving to disk
+	int nburst = 3;  // this is the number of steps before saving to disk
 			 // should divide the value of nstep without remainder...
 			 // MUST be divisible by three
 	
@@ -224,12 +231,14 @@ int main(int argc, char** argv)
 	double dt, epssqd;
 	double finalTimeGiven;
 	readParameters(inputFile, &nparticles, &dt, &finalTimeGiven, &epssqd);
-	cout<<"simulation will use "<<nparticles<<" particles, dt == "<<dt<<", nburst == "<<nburst<<endl;
+	cout<<"before burst and hack, simulation will use "<<nparticles<<" particles, dt == "<<dt<<", nburst == "<<nburst<<endl;
+	finalTimeGiven *= 0.5; //HACK HACK HACK HACK HACK HACK TO SPEED UP TESTS; should do 5 seconds sim time (50 time steps) which is like 30 seconds on Gordon
 	dt /= double(nburst);
 	cout<<"simulation will use "<<nparticles<<" particles, dt == "<<dt<<", nburst == "<<nburst<<endl;
 	int nsteps = RoundDoubleToInt(finalTimeGiven / ((double)dt));
   
 	cout<<"simulation will use "<<nparticles<<" particles, dt == "<<dt<<", nburst == "<<nburst<<endl;
+	cout<<"=================== num_omp_threads_desired == "<<num_omp_threads_desired<<endl;
 	
 	std::vector<double> masses(nparticles);
 	std::vector<point> velocities(nparticles);
@@ -242,16 +251,25 @@ int main(int argc, char** argv)
 	point accelSaved;
 	point posdiff;
 	double temp;
-	for(int i=0; i<nparticles; i++) {
+	int ii,jj;
+	
+	double starttime333 = omp_get_wtime();
+
+#ifdef USE_OMP
+omp_set_num_threads(num_omp_threads_desired);	
+#pragma omp parallel shared (masses, positionsAA, positionsBB, velocities, dt, NEWTONS_GRAVITY_CONSTANT, epssqd, nparticles) private(ii, jj, accelSaved, posdiff, temp)
+#pragma omp for nowait
+#endif
+	for(ii=0; ii<nparticles; ii++) {
 		accelSaved.zero();
-		for(int j=0; j<nparticles; j++) {
-			if(i != j) {
-				posdiff = positionsAA[j] - positionsAA[i];
+		for(jj=0; jj<nparticles; jj++) {
+			if(ii != jj) {
+				posdiff = positionsAA[jj] - positionsAA[ii];
 				temp = posdiff.length();
-				accelSaved += ((posdiff*NEWTONS_GRAVITY_CONSTANT*masses[j]) / (temp*temp*temp + epssqd));
+				accelSaved += ((posdiff*masses[jj]) / (temp*temp*temp + epssqd));
 			}
 		}
-		positionsBB[i] = positionsAA[i] + velocities[i]*dt + accelSaved*0.5*dt*dt;
+		positionsBB[ii] = positionsAA[ii] + velocities[ii]*dt + accelSaved*NEWTONS_GRAVITY_CONSTANT*0.5*dt*dt;
 	}
 	
 	
@@ -270,12 +288,12 @@ int main(int argc, char** argv)
 	writeParticles(outputFile, positionsAA);
 	writeParticles(outputFile, positionsBB);
 	
-  cout<<"positionsAA[0]="<<(fabs(positionsAA[0].x)+fabs(positionsAA[0].y)+fabs(positionsAA[0].z))<<", positionsAA[1]="<<(fabs(positionsAA[1].x)+fabs(positionsAA[1].y)+fabs(positionsAA[1].z))<<endl;
+  /*cout<<"positionsAA[0]="<<(fabs(positionsAA[0].x)+fabs(positionsAA[0].y)+fabs(positionsAA[0].z))<<", positionsAA[1]="<<(fabs(positionsAA[1].x)+fabs(positionsAA[1].y)+fabs(positionsAA[1].z))<<endl;
   cout<<"positionsBB[0]="<<(fabs(positionsBB[0].x)+fabs(positionsBB[0].y)+fabs(positionsBB[0].z))<<", positionsBB[1]="<<(fabs(positionsBB[1].x)+fabs(positionsBB[1].y)+fabs(positionsBB[1].z))<<endl;
   cout<<"positionsBB[90]="<<(fabs(positionsBB[90].x)+fabs(positionsBB[90].y)+fabs(positionsBB[90].z))<<", positionsBB[1]="<<(fabs(positionsBB[91].x)+fabs(positionsBB[91].y)+fabs(positionsBB[91].z))<<endl;
   cout<<"NEWTONS_GRAVITY_CONSTANT == "<<NEWTONS_GRAVITY_CONSTANT<<endl;
   cout<<"dt == "<<dt<<endl;
-  cout<<"========================================= looping"<<endl;
+  cout<<"========================================= looping"<<endl;*/
   
 	for(int step=0; step<nsteps; step+=nburst) {
 		for(int burst=0; burst<nburst; burst+=3) {
@@ -284,8 +302,8 @@ int main(int argc, char** argv)
 			VerletUpdate(&masses, &positionsCC, &positionsAA, &positionsBB, dt, epssqd);
 		}
 		
-    cout<<"positionsAA[0]="<<(fabs(positionsAA[0].x)+fabs(positionsAA[0].y)+fabs(positionsAA[0].z))<<", positionsAA[1]="<<(fabs(positionsAA[1].x)+fabs(positionsAA[1].y)+fabs(positionsAA[1].z))<<endl;
-    cout<<"positionsBB[0]="<<(fabs(positionsBB[0].x)+fabs(positionsBB[0].y)+fabs(positionsBB[0].z))<<", positionsBB[1]="<<(fabs(positionsBB[1].x)+fabs(positionsBB[1].y)+fabs(positionsBB[1].z))<<endl;
+    //cout<<"positionsAA[0]="<<(fabs(positionsAA[0].x)+fabs(positionsAA[0].y)+fabs(positionsAA[0].z))<<", positionsAA[1]="<<(fabs(positionsAA[1].x)+fabs(positionsAA[1].y)+fabs(positionsAA[1].z))<<endl;
+    //cout<<"positionsBB[0]="<<(fabs(positionsBB[0].x)+fabs(positionsBB[0].y)+fabs(positionsBB[0].z))<<", positionsBB[1]="<<(fabs(positionsBB[1].x)+fabs(positionsBB[1].y)+fabs(positionsBB[1].z))<<endl;
     
     //save to disk
 		writeParticles(outputFile, positionsBB);
@@ -293,6 +311,9 @@ int main(int argc, char** argv)
 		//cout<<"so far, completed "<<(1+(step/nburst))<<" bursts"<<endl;
 		cout<<"simulation time elapsed: "<<(dt*((float)nburst)*((float)(1+(step/nburst))))<<endl;
 	}
+	
+	double endtime33 = omp_get_wtime();
+	cout<<"total wall time: "<<(endtime33-starttime333)<<" seconds"<<endl;
 	
 	fclose(outputFile);
 	fclose(inputFile);
