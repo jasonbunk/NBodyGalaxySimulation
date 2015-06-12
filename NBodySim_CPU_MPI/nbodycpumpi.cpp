@@ -48,6 +48,7 @@ static int NumLocalParticles; //for which this MPI proc updates positions
 #define PROFILE_ME_PLEASE 1
 static double total_MPI_time = 0.0;
 
+#define USE_OMP 1
 
 #ifdef USE_OMP
 #include <omp.h>
@@ -280,6 +281,7 @@ total_MPI_time += (enddtime - startttime);
   if(firstStep) {
     //treat positionsAA as velocity
   	#ifdef USE_OMP
+	cout<<"using openmp, max "<<omp_get_max_threads()<<" threads, on "<<omp_get_num_procs()<<" processors"<<endl;
   	//omp_set_num_threads(4);
   	#pragma omp parallel shared (positionsAA, positionsBB, positionsCC, /*dtgscalar,*/ NumLocalParticles) private(ii)
   	#pragma omp for schedule(dynamic) nowait
@@ -438,6 +440,7 @@ int main(int argc, char** argv)
 	double dt, epssqd;
 	double finalTimeGiven;
 	readParameters(inputFile, &GlobalNumParticles, &dt, &finalTimeGiven, &epssqd);
+	finalTimeGiven *= 0.25; //HACK HACK HACK HACK HACK HACK TO SPEED UP TESTS; should do 2.5 seconds sim time (25 time steps) which is like 15 seconds on Gordon
 	dt /= double(nburst);
 	int nsteps = RoundDoubleToInt(finalTimeGiven / ((double)dt));
 	
@@ -552,10 +555,15 @@ cout << "MPI time: " << total_MPI_time << " / " << (enddtime33 - startttime33) <
 #endif
 
 	}
+	double enddtime44 = MPI_Wtime();
 
 	fclose(outputFile);
 	fclose(inputFile);
-
+cout<<"done; finalizing"<<endl;
+	
+	outputFile = fopen((fileToSaveTo+std::string(".log")).c_str(), "w");
+	fprintf(outputFile, "MPI time: %f / %f == %f", total_MPI_time, enddtime44-startttime33, (total_MPI_time/(enddtime44-startttime33)));
+	fclose(outputFile);
   MPI_Finalize();
 	return 0;
 }
